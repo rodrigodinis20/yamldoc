@@ -43,7 +43,7 @@ class MetaEntry:
             output += "| :-: | :-: | :-: | :-- |\n"
 
             for entry in self.entries:
-                output += entry.to_markdown(schema)
+                output += entry.to_markdown(schema) + "\n"
             output += "\n\n"
             return output
 
@@ -99,6 +99,7 @@ class Entry:
         """
         if schema: 
             m = '<br />'.join(textwrap.wrap(self.meta, width = 50))
+            """m = self.meta"""
             if self.type == None:
                 vartype = "Unknown"
             else:

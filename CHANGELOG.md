@@ -17,3 +17,7 @@ Fixed parser to accept 3 args instead of 2.
 #### June 2 2021
 
 Removed line separators from entries.py in markdown converter.
+Fixed line separators issue. (no excessive line breaks in order to generate html properly)
+
+## EM FALTA
+comentário em two-level
