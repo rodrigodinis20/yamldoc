@@ -7,3 +7,13 @@ Added support for enum valiation in schema file. These go into an "extra" data s
 #### December 1 2020
 
 Fixed parsing of URLs, the ":" delimiter was messing up the string splitting.
+
+### 0.1.5.1
+#### June 1 2021
+
+Fixed parser to accept 3 args instead of 2.
+
+### 0.1.5.2
+#### June 2 2021
+
+Removed line separators from entries.py in markdown converter.

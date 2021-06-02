@@ -103,7 +103,7 @@ class Entry:
                 vartype = "Unknown"
             else:
                 vartype = self.type
-            return f'| `{self.key}` | `{self.value}` | {vartype} | {m} |\n'
+            return f'| `{self.key}` | `{self.value}` | {vartype} | {m} |'
         else:
             m = '<br />'.join(textwrap.wrap(self.meta, width = 50))
-            return f'| `{self.key}` | `{self.value}` | {m} |\n'
+            return f'| `{self.key}` | `{self.value}` | {m} |'
