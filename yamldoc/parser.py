@@ -1,9 +1,11 @@
+from itertools import cycle
+
 import yamldoc.entries
 from datetime import date
 import pdb
 
 
-def parse_yaml(file_path, char = "#'", debug = False):
+def parse_yaml(file_path, char="#'", debug=False):
     '''
     Parse a YAML file and return a list of YAML classes. 
 
@@ -24,26 +26,26 @@ def parse_yaml(file_path, char = "#'", debug = False):
     things = []
 
     with open(file_path) as yaml:
-        iterator = iter(l for l in yaml.readlines() if l.rstrip())
-        for line in iterator:
-            if debug: print(line.rstrip())
-            
+        test_var = [l for l in yaml.readlines()if l.rstrip()]
+        for line in range(len(test_var)-1):
+            if debug: print(test_var[line].rstrip())
+
             # Either we haven't started yet
             # or we've just flushed the entry.
             if current_entry is None:
                 # Find the number of leading spaces.
                 # YAML only uses spaces.
-                nspaces = len(line) - len(line.lstrip(' '))
+                nspaces = len(test_var[line]) - len(test_var[line].lstrip(' '))
                 if debug: print("@\tFound " + str(nspaces) + " indent level.")
-                        
+
                 if nspaces == 0:
                     current_entry = None
-                    if line.startswith(char):
-                        meta = meta + line.lstrip(char).rstrip()
+                    if test_var[line].startswith(char):
+                        meta = meta + test_var[line].lstrip(char).rstrip()
                     else:
-                        key, value = line.rstrip().split(":", 1)
-                        
-                        # If there is no value, this is the beginning of a 
+                        key, value = test_var[line].rstrip().split(":", 1)
+
+                        # If there is no value, this is the beginning of a
                         # base entry (i.e. there are subentries to follow)
                         if not value.lstrip():
                             current_entry = yamldoc.entries.MetaEntry(key, meta)
@@ -61,20 +63,26 @@ def parse_yaml(file_path, char = "#'", debug = False):
 
                     # If we're back at 0 indentation, the
                     # block is done and we need to quit.
-                    if len(line[l + 1]) - len(line.lstrip(' ')) == 0:
+                    if len(test_var[line]) - len(test_var[line].lstrip(' ')) == 0:
                         things.append(current_entry)
                         current_entry = None
                         if debug: print("@\ttest debug")
                         continue
 
                     # If not, continue parsing the sub entries.
-                    if line.lstrip(' ').startswith(char):
-                        meta = meta + line.lstrip().lstrip(char).rstrip()
+                    if test_var[line].lstrip(' ').startswith(char):
+                        meta = test_var[line].lstrip().lstrip(char).rstrip()
+                        if debug: print("@\tanother test bugging")
                     else:
-                        key, value = line.lstrip().rstrip().split(":", 1)
+                        key, value = test_var[line].lstrip().rstrip().split(":", 1)
                         current_entry.entries.append(yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip()))
                         if debug: print("@\tFound an entry and deposited it in meta.")
                         meta = ""
+                        if len(test_var[line + 1]) - len(test_var[line + 1].lstrip(' ')) == 0:
+                            things.append(current_entry)
+                            current_entry = None
+                            if debug: print("@\ttest debug")
+                            continue
 
         # The file might run out
         # before the final meta
@@ -85,8 +93,6 @@ def parse_yaml(file_path, char = "#'", debug = False):
         except AttributeError:
             pass
 
-
-    
     return things
 
 
@@ -102,12 +108,13 @@ def key_value(line):
     '''
     try:
         key, value = line.rstrip().lstrip(' ').split(":", 1)
-    except ValueError: 
+    except ValueError:
         values = line.rstrip().lstrip(' ').split(":", 1)
         key = values[0]
         value = ''.join(values[1:])
     if not value: return (key)
     return (key, value.lstrip(" "))
+
 
 def count_indent(line):
     '''
@@ -118,7 +125,8 @@ def count_indent(line):
     '''
     return len(line) - len(line.lstrip(' '))
 
-def parse_schema(path_to_file, debug = False):
+
+def parse_schema(path_to_file, debug=False):
     '''
     Parse a schema file to identify key value pairing of 
     values and their associated types.
@@ -145,7 +153,6 @@ def parse_schema(path_to_file, debug = False):
             if debug: print(line)
             indent = [indent[1], count_indent(line)]
 
-            
             # The base level has to start with a special name
             # because it is not named in the schema.
             try:
@@ -179,15 +186,14 @@ def parse_schema(path_to_file, debug = False):
                 assert value is not None
                 specials["schema"] = value
 
-            if key == "_yamldoc_title": 
+            if key == "_yamldoc_title":
                 assert value is not None
                 specials[key] = value
 
-            if key == "_yamldoc_description": 
+            if key == "_yamldoc_description":
                 assert value is not None
                 specials[key] = value
 
-            
             if key == "description":
                 assert value is not None
                 specials["description"] = value
@@ -196,11 +202,10 @@ def parse_schema(path_to_file, debug = False):
             # Top level properties option
             if value is None:
                 if key == "properties":
-                    current[name] = {} 
+                    current[name] = {}
                     indents[name] = {}
                     extras[name] = {}
                     continue
-
 
             # Deal with increasing indent levels
             # The actual amount of indent is not
@@ -212,11 +217,11 @@ def parse_schema(path_to_file, debug = False):
                     # then we are starting a new object
                     # definition.
                     if key == "properties":
-                        current[name] = {} 
-                        indents[name] = {} 
+                        current[name] = {}
+                        indents[name] = {}
                         extras[name] = {}
                         continue
-                    
+
                     # This is a special case where
                     # there can be multiple types
                     # given for a particular variable.
@@ -225,7 +230,7 @@ def parse_schema(path_to_file, debug = False):
                         indents[parent][name] = []
                         special_type_case = True
                         continue
-                        
+
 
                     # Otherwise, its the name of the
                     # actual object.
@@ -236,7 +241,7 @@ def parse_schema(path_to_file, debug = False):
                         parent = name
                         name = key
                         continue
-                
+
                 # If it's giving the type of the object
                 # then store that under the parent (meta)
                 # object along with its indentation level. 
@@ -251,14 +256,9 @@ def parse_schema(path_to_file, debug = False):
                     if name in extras[parent].keys():
                         extras[parent][name][key] = value
                         indents[parent][name] = indent[1]
-                    else: 
+                    else:
                         extras[parent][name] = {key: value}
                         indents[parent][name] = indent[1]
-
-
-
-
-                
 
             if indent[1] < indent[0]:
                 # We're just adding another value 
@@ -270,10 +270,11 @@ def parse_schema(path_to_file, debug = False):
                     if value is None:
                         name = key
                         continue
-                
+
         return current, specials, extras
 
-def add_type_metadata(schema, yaml, debug = False):
+
+def add_type_metadata(schema, yaml, debug=False):
     '''
     Modified a list of yaml entries in place to add type information
     from a parsed schema.
@@ -289,13 +290,13 @@ def add_type_metadata(schema, yaml, debug = False):
     # Loop over each value of the schema 
     for name, variables in schema.items():
         # Find the corresponding entry in the YAML.
-        
+
         # Special case: if the name is base in the schema
         # these are top level variables
         # which need to be dealt with seperately.
-        if name == "base": 
+        if name == "base":
             # Look for top level entries
-            for var, var_type in variables.items(): 
+            for var, var_type in variables.items():
                 for value in yaml:
                     if not value.isBase:
                         if var == value.key:
@@ -315,8 +316,8 @@ def add_type_metadata(schema, yaml, debug = False):
                                     value.has_schema = True
                                     entry.has_schema = True
 
-            
-def add_extra_metadata(extras, yaml, debug = False):
+
+def add_extra_metadata(extras, yaml, debug=False):
     '''
     Modified a list of yaml entries in place to add extra type information
     from a parsed schema.
@@ -332,17 +333,17 @@ def add_extra_metadata(extras, yaml, debug = False):
     # Loop over each value of the schema 
     for name, variables in extras.items():
         # Find the corresponding entry in the YAML.
-        
+
         # Special case: if the name is base in the schema
         # these are top level variables
         # which need to be dealt with seperately.
-        if name == "base": 
+        if name == "base":
             # Look for top level entries
-            for var, meta in variables.items(): 
+            for var, meta in variables.items():
                 for value in yaml:
                     if not value.isBase:
                         if var == value.key:
-                            for key, v in meta.items(): 
+                            for key, v in meta.items():
                                 value.key = value
         else:
             for value in yaml:
@@ -352,14 +353,12 @@ def add_extra_metadata(extras, yaml, debug = False):
                             for entry in value.entries:
                                 if var == entry.key:
                                     if debug: print(f"Setting type of {var}")
-                                    for key, v in meta.items(): 
+                                    for key, v in meta.items():
                                         setattr(entry, key, v)
 
 
-
-        
-
-def main(yaml_path, char = "#'", debug = False, schema_path = None, title = "Configuration Parameters Reference", description = "Any information about this page goes here."):
+def main(yaml_path, char="#'", debug=False, schema_path=None, title="Configuration Parameters Reference",
+         description="Any information about this page goes here."):
     '''
     Takes a given YAML file and optionally an associated schema, parsing each for their key value pairings and reports the results as a markdown document.
 
@@ -389,23 +388,22 @@ def main(yaml_path, char = "#'", debug = False, schema_path = None, title = "Con
 
         if "_yamldoc_description" in specials:
             description = specials["_yamldoc_description"]
-            
 
         # And do the printing
         print("# " + title + "\n\n" + description + "\n")
 
         # Build the table with top level yaml
         print("| Key | Value | Type | Information |")
-        print("| :-: | :-: | :-: | :-- |") 
+        print("| :-: | :-: | :-: | :-- |")
         for value in yaml:
             if not value.isBase:
-                print(value.to_markdown(schema = True))
+                print(value.to_markdown(schema=True))
 
         print("\n\n")
 
         for value in yaml:
             if value.isBase:
-                print(value.to_markdown(schema = True))
+                print(value.to_markdown(schema=True))
 
     else:
         print("# " + title + "\n\n" + description + "\n")
@@ -413,7 +411,7 @@ def main(yaml_path, char = "#'", debug = False, schema_path = None, title = "Con
         yaml = parse_yaml(yaml_path, char, debug)
         # Build the table with top level yaml
         print("| Key | Value | Information |")
-        print("| :-: | :-: | :-- |") 
+        print("| :-: | :-: | :-- |")
         for value in yaml:
             if not value.isBase:
                 print(value.to_markdown())
@@ -423,5 +421,3 @@ def main(yaml_path, char = "#'", debug = False, schema_path = None, title = "Con
         for value in yaml:
             if value.isBase:
                 print(value.to_markdown())
-
-
