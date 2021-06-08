@@ -393,8 +393,8 @@ def main(yaml_path, char="#'", debug=False, schema_path=None, title="Configurati
         print("# " + title + "\n\n" + description + "\n")
 
         # Build the table with top level yaml
-        print("| Key | Value | Type | Information |")
-        print("| :-: | :-: | :-: | :-- |")
+        print("| Parameter | Mandatory | Type | Example | Default Value | Information |")
+        print("| :-: | :-: | :-: | :-: | :-: | :-- |")
         for value in yaml:
             if not value.isBase:
                 print(value.to_markdown(schema=True))
