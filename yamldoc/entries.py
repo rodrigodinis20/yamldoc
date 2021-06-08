@@ -24,7 +24,7 @@ class MetaEntry:
         Returns a print representation.
         """
         if self.has_schema:
-            return f'YAML Meta Object with {len(self.entries)} entries [{self.name}] and type information.' 
+            return f'YAML Meta Object with {len(self.entries)} entries [{self.name}] and type information.'
         else:
             return f'YAML Meta Object with {len(self.entries)} entries [{self.name}]'
 
@@ -45,6 +45,7 @@ class MetaEntry:
             for entry in self.entries:
                 output += entry.to_markdown(schema) + "\n"
             output += "\n\n"
+
             return output
 
         else: 
@@ -60,8 +61,6 @@ class MetaEntry:
             output += "\n\n"
 
             return output
-
-        
 
 class Entry:
     """
@@ -97,13 +96,19 @@ class Entry:
         Arguments:
             schema: Print with four columns instead of three.
         """
-        if schema: 
-            m = '<br />'.join(textwrap.wrap(self.meta, width = 50))
-            """m = self.meta"""
-            if self.type == None:
-                vartype = "Unknown"
-            else:
+        if schema:
+            m = '<br />'.join(textwrap.wrap(self.meta, width =  50))
+            if "$" in m:
                 vartype = self.type
+                accepted_types = ["byte", "boolean", "string", "integer", "long", "double", "char", "float", "short"]
+                if m[m.find("$")+1:].split()[0] in accepted_types:
+                    vartype = m[m.find("$")+1:].split()[0]
+                    m = m.replace(m[m.find("$"):].split()[0], "")
+                else:
+                    vartype = "invalid variable type"
+                    m = m.replace(m[m.find("$"):].split()[0], "")
+            else:
+                vartype = "Unknown"
             return f'| `{self.key}` | `{self.value}` | {vartype} | {m} |'
         else:
             m = '<br />'.join(textwrap.wrap(self.meta, width = 50))
