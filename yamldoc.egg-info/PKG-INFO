@@ -1,9 +1,9 @@
 Metadata-Version: 2.1
 Name: yamldoc
-Version: 0.1.5.1
+Version: 0.1.5
 Summary: Documentation engine for YAML.
 Home-page: UNKNOWN
-Author: Chris Cole
+Author: Chris Cole, Rodrigo Dinis & Hugo Cunha
 Author-email: ccole@well.ox.ac.uk
 License: UNKNOWN
 Description: ## Documentation Engine for YAML

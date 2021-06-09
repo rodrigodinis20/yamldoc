@@ -1,10 +1,12 @@
 import textwrap
 
+
 class MetaEntry:
     """ 
     A container to hold a base level YAML entry plus any associated
     hierarchical keys and values. 
     """
+
     def __init__(self, name, meta):
         """ 
         Initialize the object.
@@ -38,7 +40,7 @@ class MetaEntry:
         if schema:
             output = f'## `{self.name}`\n\n{self.meta}\n\n'
             output += "### Member variables:\n\n"
-            
+
             output += "| Parameter | Mandatory | Type | Example | Default | Information |\n"
             output += "| :-: | :-: | :-: | :-: | :-: | :-- |\n"
 
@@ -48,10 +50,10 @@ class MetaEntry:
 
             return output
 
-        else: 
+        else:
             output = f'## `{self.name}`\n\n{self.meta}\n\n'
             output += "### Member variables:\n\n"
-            
+
             output += "| Key | Value | Information |\n"
             output += "| :-: | :-: | :-- |\n"
 
@@ -62,9 +64,11 @@ class MetaEntry:
 
             return output
 
+
 class Entry:
     """
     Container for a single YAML key value pairing and associated metadata."""
+
     def __init__(self, key, value, meta):
         """
         Initialize the object
@@ -80,8 +84,7 @@ class Entry:
         self.isBase = False
         self.type = None
         self.mandatory = None
-        self.default = None
-
+        self.default = "Mandatory is not specified"
 
     def __repr__(self):
         """
@@ -92,7 +95,7 @@ class Entry:
         else:
             return f'YAML Entry [{self.key}: {self.value}]\n\t Meta: {self.meta}'
 
-    def to_markdown(self, schema = False):
+    def to_markdown(self, schema=False):
         """
         Prints the entry as markdown.
 
@@ -100,12 +103,13 @@ class Entry:
             schema: Print with four columns instead of three.
         """
         if schema:
-            m = '<br />'.join(textwrap.wrap(self.meta, width =  50))
+            m = '<br />'.join(textwrap.wrap(self.meta, width=50))
+            default = self.default
             if "$" in m:
                 vartype = self.type
                 accepted_types = ["byte", "boolean", "string", "integer", "long", "double", "char", "float", "short"]
-                if m[m.find("$")+1:].split()[0] in accepted_types:
-                    vartype = m[m.find("$")+1:].split()[0]
+                if m[m.find("$") + 1:].split()[0] in accepted_types:
+                    vartype = m[m.find("$") + 1:].split()[0]
                     m = m.replace(m[m.find("$"):].split()[0], "")
                 else:
                     vartype = "invalid variable type"
@@ -115,25 +119,31 @@ class Entry:
             if "%" in m:
                 mandatory = self.mandatory
                 accepted_types = ["yes", "no"]
-                if m[m.find("%")+1:].split()[0] in accepted_types:
-                    mandatory = m[m.find("%")+1:].split()[0]
-                    m = m.replace(m[m.find("%"):].split()[0], "")
+                if m[m.find("%") + 1:].split()[0] in accepted_types:
+                    mandatory = m[m.find("%") + 1:].split()[0]
+                    try:
+                        if ("@" in m) and (mandatory == "no"):
+                            default = m[m.find("@") + 1:].split()[0]
+                            m = m.replace(m[m.find("@"):].split()[0], "")
+                        elif mandatory == "yes":
+                            default = ""
+                        else:
+                            default = "Default value is not specified"
+                            m = m.replace(m[m.find("@"):].split()[0], "")
+                    except IndexError:
+                        default = "Default value is not specified"
+                        m = m.replace(m[m.find("@"):].split()[0], "")
                 else:
                     mandatory = "invalid input"
-                    m = m.replace(m[m.find("%"):].split()[0], "")
+                m = m.replace(m[m.find("%"):].split()[0], "")
             else:
                 mandatory = "Unspecified"
-            try:
-                if mandatory == "no":
-                    default = self.default
-                    default = m[m.find("@")+1:].split()[0]
-                    m = m.replace(m[m.find("@"):].split()[0], "")
-                else:
-                    m = m.replace(m[m.find("@"):].split()[0], "")
-                    default = ""
-            except IndexError:
-                default = "This parameter needs a default value"
-            return f'| `{self.key}` | `{mandatory}` | {vartype} | {self.value} | {default} | {m} |'
+
+            key = self.key
+            if key.startswith("#"):
+                key = key.replace("#", "", 1)
+
+            return f'| `{key}` | `{mandatory}` | {vartype} | {self.value} | {default} | {m} |'
         else:
-            m = '<br />'.join(textwrap.wrap(self.meta, width = 50))
+            m = '<br />'.join(textwrap.wrap(self.meta, width=50))
             return f'| `{self.key}` | `{self.value}` | {m} |'
