@@ -28,22 +28,23 @@ def parse_yaml(file_path, char="#'", debug=False):
     with open(file_path) as yaml:
         test_var = [l for l in yaml.readlines()if l.rstrip()]
         for line in range(len(test_var)-1):
-            if debug: print(test_var[line].rstrip())
+            line_var = test_var[line]
+            if debug: print(line_var.rstrip())
 
             # Either we haven't started yet
             # or we've just flushed the entry.
             if current_entry is None:
                 # Find the number of leading spaces.
                 # YAML only uses spaces.
-                nspaces = len(test_var[line]) - len(test_var[line].lstrip(' '))
+                nspaces = len(line_var) - len(line_var.lstrip(' '))
                 if debug: print("@\tFound " + str(nspaces) + " indent level.")
 
                 if nspaces == 0:
                     current_entry = None
-                    if test_var[line].startswith(char):
-                        meta = meta + test_var[line].lstrip(char).rstrip()
+                    if line_var.startswith(char):
+                        meta = meta + line_var.lstrip(char).rstrip()
                     else:
-                        key, value = test_var[line].rstrip().split(":", 1)
+                        key, value = line_var.rstrip().split(":", 1)
 
                         # If there is no value, this is the beginning of a
                         # base entry (i.e. there are subentries to follow)
@@ -63,18 +64,26 @@ def parse_yaml(file_path, char="#'", debug=False):
 
                     # If we're back at 0 indentation, the
                     # block is done and we need to quit.
-                    if len(test_var[line]) - len(test_var[line].lstrip(' ')) == 0:
+                    if len(line_var) - len(line_var.lstrip(' ')) == 0:
                         things.append(current_entry)
                         current_entry = None
                         if debug: print("@\ttest debug")
                         continue
 
                     # If not, continue parsing the sub entries.
-                    if test_var[line].lstrip(' ').startswith(char):
-                        meta = test_var[line].lstrip().lstrip(char).rstrip()
+                    if line_var.lstrip(' ').startswith(char):
+                        meta = line_var.lstrip().lstrip(char).rstrip()
                         if debug: print("@\tanother test bugging")
+                    #elif line_var.startswith("-"):
+                      #  value = line_var[line_var.find("-") + 1:].split()[0]
+                       # key = str(test_var[line - 1].lstrip().rstrip().split(":", 0))
+                       # current_entry.entries.append(yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip()))
+                       # meta = ""
+                       # if debug: print("@\t123testcomment123")
                     else:
-                        key, value = test_var[line].lstrip().rstrip().split(":", 1)
+                        #if test_var[line].lstrip(' ').startswith("-"):
+                         #   value = test_var[line].lstrip().rstrip().split("-", 1)
+                        key, value = line_var.lstrip().rstrip().split(":", 1)
                         current_entry.entries.append(yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip()))
                         if debug: print("@\tFound an entry and deposited it in meta.")
                         meta = ""

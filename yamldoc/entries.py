@@ -137,7 +137,7 @@ class Entry:
                     mandatory = "invalid input"
                 m = m.replace(m[m.find("%"):].split()[0], "")
             else:
-                mandatory = "Unspecified"
+                raise Exception("Mandatory is not specified")
 
             key = self.key
             if key.startswith("#"):
