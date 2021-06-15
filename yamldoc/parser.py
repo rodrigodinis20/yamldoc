@@ -66,7 +66,6 @@ def parse_yaml(file_path, char="#'", debug=False):
                     # block is done and we need to quit.
                     if len(line_var) - len(line_var.lstrip(' ')) == 0:
                         things.append(current_entry)
-                        print(current_entry)
                         current_entry = None
                         if debug: print("@\ttest debug")
                         continue
@@ -90,7 +89,6 @@ def parse_yaml(file_path, char="#'", debug=False):
                         meta = ""
                         if len(test_var[line + 1]) - len(test_var[line + 1].lstrip(' ')) == 0:
                             things.append(current_entry)
-                            print(current_entry)
                             current_entry = None
                             if debug: print("@\ttest debug")
                             continue
@@ -101,7 +99,6 @@ def parse_yaml(file_path, char="#'", debug=False):
         try:
             if current_entry.isBase:
                 things.append(current_entry)
-                print(current_entry)
         except AttributeError:
             pass
 
