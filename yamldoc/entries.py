@@ -44,8 +44,17 @@ class MetaEntry:
             output += "| Parameter | Mandatory | Type | Example | Default | Information |\n"
             output += "| :-: | :-: | :-: | :-: | :-: | :-- |\n"
 
+            entries = []
+
             for entry in self.entries:
-                output += entry.to_markdown(schema) + "\n"
+
+                entries.append(entry.to_markdown(schema) + "\n")
+                #output += entry.to_markdown(schema) + "\n"
+
+
+            entries.sort()
+            for entry in entries:
+                output += entry
             output += "\n\n"
 
             return output
@@ -137,6 +146,7 @@ class Entry:
                     mandatory = "invalid input"
                 m = m.replace(m[m.find("%"):].split()[0], "")
             else:
+                mandatory = "fefv3r3"
                 raise Exception("Mandatory is not specified")
 
             key = self.key

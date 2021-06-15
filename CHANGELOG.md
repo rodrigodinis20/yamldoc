@@ -26,3 +26,7 @@ The program now runs with all the needed columns and parameters with both types 
 It took one week but we did it.
 Two interns on a language they barely knew.
 Lets hope work keeps up!
+
+More changes have been made:
+- Now the mandatory variable is itself mandatory else it throws an exception
+- Now the variables are put in alphabetical order
