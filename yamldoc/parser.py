@@ -24,7 +24,7 @@ def parse_yaml(file_path, char="#'", debug=False):
     current_entry = None
     meta = ""
     things = []
-
+    values = []
     with open(file_path) as yaml:
         test_var = [l for l in yaml.readlines()if l.rstrip()]
         for line in range(len(test_var)-1):
@@ -48,7 +48,17 @@ def parse_yaml(file_path, char="#'", debug=False):
 
                         # If there is no value, this is the beginning of a
                         # base entry (i.e. there are subentries to follow)
-                        if not value.lstrip():
+                        if test_var[line + 1].lstrip(" ").startswith("-") and not value.lstrip():
+
+                            index = 1
+                            while test_var[line + index].lstrip(" ").startswith("-"):
+                                values.append(test_var[line + index].lstrip(" ").lstrip("- ").rstrip())
+                                index = index + 1
+                                if debug: print("@\tList values")
+
+                            things.append(yamldoc.entries.Entry(key, values, meta.lstrip()))
+
+                        elif not value.lstrip():
                             current_entry = yamldoc.entries.MetaEntry(key, meta)
                             if debug: print("@\tFound a meta entry.")
                             continue
@@ -92,6 +102,9 @@ def parse_yaml(file_path, char="#'", debug=False):
                             current_entry = None
                             if debug: print("@\ttest debug")
                             continue
+                #elif current_entry.isBase and (test_var[line + 1].lstrip(" ").startswith("-")):
+                #else:
+                #    print("po crlh")
 
         # The file might run out
         # before the final meta
