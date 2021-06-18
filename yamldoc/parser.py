@@ -25,10 +25,12 @@ def parse_yaml(file_path, char="#'", debug=False):
     meta = ""
     things = []
     values = []
+
     with open(file_path) as yaml:
-        test_var = [l for l in yaml.readlines()if l.rstrip()]
-        for line in range(len(test_var)-1):
+        test_var = [l for l in yaml.readlines() if l.rstrip()]
+        for line in range(len(test_var) - 1):
             line_var = test_var[line]
+            nspaces = len(line_var) - len(line_var.lstrip(' '))
             if debug: print(line_var.rstrip())
 
             # Either we haven't started yet
@@ -36,7 +38,6 @@ def parse_yaml(file_path, char="#'", debug=False):
             if current_entry is None:
                 # Find the number of leading spaces.
                 # YAML only uses spaces.
-                nspaces = len(line_var) - len(line_var.lstrip(' '))
                 if debug: print("@\tFound " + str(nspaces) + " indent level.")
 
                 if nspaces == 0:
@@ -49,14 +50,17 @@ def parse_yaml(file_path, char="#'", debug=False):
                         # If there is no value, this is the beginning of a
                         # base entry (i.e. there are subentries to follow)
                         if test_var[line + 1].lstrip(" ").startswith("-") and not value.lstrip():
-
-                            index = 1
-                            while test_var[line + index].lstrip(" ").startswith("-"):
-                                values.append(test_var[line + index].lstrip(" ").lstrip("- ").rstrip())
-                                index = index + 1
-                                if debug: print("@\tList values")
+                            try:
+                                index = 1
+                                while test_var[line + index].lstrip(" ").startswith("-"):
+                                    values.append(test_var[line + index].lstrip(" ").lstrip("- ").rstrip())
+                                    index = index + 1
+                                    if debug: print("@\tList values")
+                            except IndexError:
+                                pass
 
                             things.append(yamldoc.entries.Entry(key, values, meta.lstrip()))
+                            values = []
 
                         elif not value.lstrip():
                             current_entry = yamldoc.entries.MetaEntry(key, meta)
@@ -71,40 +75,86 @@ def parse_yaml(file_path, char="#'", debug=False):
 
             if current_entry is not None:
                 if current_entry.isBase:
-
-                    # If we're back at 0 indentation, the
-                    # block is done and we need to quit.
-                    if len(line_var) - len(line_var.lstrip(' ')) == 0:
-                        things.append(current_entry)
-                        current_entry = None
-                        if debug: print("@\ttest debug")
-                        continue
-
-                    # If not, continue parsing the sub entries.
                     if line_var.lstrip(' ').startswith(char):
                         meta = line_var.lstrip().lstrip(char).rstrip()
                         if debug: print("@\tanother test bugging")
-                    #elif line_var.startswith("-"):
-                      #  value = line_var[line_var.find("-") + 1:].split()[0]
-                       # key = str(test_var[line - 1].lstrip().rstrip().split(":", 0))
-                       # current_entry.entries.append(yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip()))
-                       # meta = ""
-                       # if debug: print("@\t123testcomment123")
+
                     else:
-                        #if test_var[line].lstrip(' ').startswith("-"):
-                         #   value = test_var[line].lstrip().rstrip().split("-", 1)
-                        key, value = line_var.lstrip().rstrip().split(":", 1)
-                        current_entry.entries.append(yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip()))
-                        if debug: print("@\tFound an entry and deposited it in meta.")
-                        meta = ""
-                        if len(test_var[line + 1]) - len(test_var[line + 1].lstrip(' ')) == 0:
-                            things.append(current_entry)
-                            current_entry = None
-                            if debug: print("@\ttest debug")
-                            continue
-                #elif current_entry.isBase and (test_var[line + 1].lstrip(" ").startswith("-")):
-                #else:
-                #    print("po crlh")
+                        try:
+                            key, value = line_var.lstrip().rstrip().split(":", 1)
+                            if len(test_var[line + 1]) - len(test_var[line + 1].lstrip(' ')) == 0:
+                                things.append(current_entry)
+                                current_entry = None
+                                if debug: print("@\ttest debug")
+                                continue
+
+                            elif line_var.endswith(":\n"):
+                                try:
+                                    index = 1
+                                    while test_var[line + index].lstrip(" ").startswith("-"):
+                                        #if test_var[line + index].lstrip(" ").startswith("-") and ("-" not in test_var[line + index + 1]):
+                                        #    if debug: print('@\tAQUI CRLH')
+                                        #    values.append(test_var[line + index].lstrip(" ").lstrip("- ").rstrip())
+                                        #    index = index + 1
+                                        #else:
+                                        values.append(test_var[line + index].lstrip(" ").lstrip("- ").rstrip())
+                                        index = index + 1
+                                        if debug: print("@\tList values")
+                                except IndexError:
+                                    pass
+
+                                current_entry.entries.append(yamldoc.entries.Entry(key, values, meta.lstrip()))
+                                meta = ""
+                                values = []
+
+                            elif line_var.lstrip(" ").startswith("-") and ("-" not in test_var[line + 1]):
+                                if debug: "@\tAQUI CRLH"
+
+                            else:
+                                key, value = line_var.lstrip().rstrip().split(":", 1)
+                                current_entry.entries.append(yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip()))
+                                if debug: print("@\tFound an entry and deposited it in meta.")
+                                meta = ""
+
+                        except ValueError: pass
+#                    # If we're back at 0 indentation, the
+#                    # block is done and we need to quit.
+#                    if len(line_var) - len(line_var.lstrip(' ')) == 0:
+#                        things.append(current_entry)
+#                        current_entry = None
+#                        if debug: print("@\ttest debug")
+#                        continue
+#
+#                    # If not, continue parsing the sub entries.
+#                    elif line_var.lstrip(' ').startswith(char):
+#                        meta = line_var.lstrip().lstrip(char).rstrip()
+#                        if debug: print("@\tanother test bugging")
+#
+#                    elif test_var[line + 1].lstrip(" ").startswith("-") and test_var[line - 1].lstrip(' ').startswith(char):
+#                        if debug: "@\t AQUI CRLH"
+#                        try:
+#                            index = 1
+#                            while test_var[line + index].lstrip(" ").startswith("-"):
+#                                values.append(test_var[line + index].lstrip(" ").lstrip("- ").rstrip())
+#                                index = index + 1
+#                                if debug: print("@\tList values")
+#                        except IndexError:
+#                            pass
+#                        current_entry.entries.append(yamldoc.entries.Entry(key, values, meta.lstrip()))
+#                        values = []
+#
+#                    elif line_var.lstrip(' ').startswith("-"): continue
+#
+#                    else:
+#                        key, value = line_var.lstrip().rstrip().split(":", 1)
+#                        current_entry.entries.append(yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip()))
+#                        if debug: print("@\tFound an entry and deposited it in meta.")
+#                        meta = ""
+#                        if len(test_var[line + 1]) - len(test_var[line + 1].lstrip(' ')) == 0:
+#                            things.append(current_entry)
+#                            current_entry = None
+#                            if debug: print("@\ttest debug")
+#                            continue
 
         # The file might run out
         # before the final meta
@@ -114,6 +164,11 @@ def parse_yaml(file_path, char="#'", debug=False):
                 things.append(current_entry)
         except AttributeError:
             pass
+
+        if test_var[-1] and nspaces == 0:
+            if debug: print(nspaces)
+            key, value = test_var[-1].lstrip().rstrip().split(":", 1)
+            things.append(yamldoc.entries.Entry(key, value, meta.lstrip()))
 
     return things
 
@@ -134,8 +189,10 @@ def key_value(line):
         values = line.rstrip().lstrip(' ').split(":", 1)
         key = values[0]
         value = ''.join(values[1:])
-    if not value: return (key)
-    return (key, value.lstrip(" "))
+    if not value:
+        return key
+
+    return key, value.lstrip(" ")
 
 
 def count_indent(line):
@@ -420,7 +477,6 @@ def main(yaml_path, char="#'", debug=False, schema_path=None, title="Configurati
         values = []
         for value in yaml:
             if not value.isBase:
-
                 values.append(value.to_markdown(schema=True))
                 # print(value.to_markdown(schema=True))
         values.sort()

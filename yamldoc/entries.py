@@ -138,7 +138,7 @@ class Entry:
                             default = ""
                         else:
                             default = "Default value is not specified"
-                            m = m.replace(m[m.find("@"):].split()[0], "")
+                            #m = m.replace(m[m.find("@"):].split()[0], "")
                     except IndexError:
                         default = "Default value is not specified"
                         m = m.replace(m[m.find("@"):].split()[0], "")
@@ -146,7 +146,6 @@ class Entry:
                     mandatory = "invalid input"
                 m = m.replace(m[m.find("%"):].split()[0], "")
             else:
-
                 raise Exception("Mandatory is not specified in " + self.key)
 
             key = self.key

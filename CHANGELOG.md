@@ -30,3 +30,10 @@ Lets hope work keeps up!
 More changes have been made:
 - Now the mandatory variable is itself mandatory else it throws an exception
 - Now the variables are put in alphabetical order
+
+### NEEDED CHANGES
+
+- Poder adicionar os niveis que quisermos(verificar identação)
+- Adicionar mapas(criar nova tabela)
+- Embed tables para mais que um nivel
+- Adicionar hiperligações para tipos complexos(na tabela principal)
