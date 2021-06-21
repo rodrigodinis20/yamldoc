@@ -1,5 +1,61 @@
 import textwrap
 
+class SubEntry:
+
+    def __init__(self, name, meta):
+        self.name = name
+        self.meta = meta
+        self.nextLevel = True
+        self.entries = []
+        self.has_schema = False
+
+    def __repr__(self):
+        """
+        Returns a print representation.
+        """
+
+        return f'YAML Meta Object with {len(self.entries)} entries [{self.name}] and type information.'
+
+    def to_markdown(self, schema=False):
+
+        if schema:
+
+            if "%" in self.meta:
+                self.meta = self.meta.replace(self.meta[self.meta.find("%"):].split()[0], "")
+
+            output = f'## `{self.name}`\n\n{self.meta}\n\n'
+            output += "### Member variables:\n\n"
+
+            output += "| Parameter | Mandatory | Type | Example | Default | Information |\n"
+            output += "| :-: | :-: | :-: | :-: | :-: | :-- |\n"
+
+            entries = []
+
+            for entry in self.entries:
+                entries.append(entry.to_markdown(schema) + "\n")
+                # output += entry.to_markdown(schema) + "\n"
+
+            entries.sort()
+            for entry in entries:
+                output += entry
+            output += "\n\n"
+
+            return output
+
+        else:
+            output = f'## `{self.name}`\n\n{self.meta}\n\n'
+            output += "### Member variables:\n\n"
+
+            output += "| Key | Value | Information |\n"
+            output += "| :-: | :-: | :-- |\n"
+
+            for entry in self.entries:
+                output += entry.to_markdown()
+
+            output += "\n\n"
+
+            return output
+
 
 class MetaEntry:
     """ 
@@ -38,6 +94,10 @@ class MetaEntry:
             schema: Print with four columns instead of three.
         """
         if schema:
+
+            if "%" in self.meta:
+                self.meta = self.meta.replace(self.meta[self.meta.find("%"):].split()[0], "")
+
             output = f'## `{self.name}`\n\n{self.meta}\n\n'
             output += "### Member variables:\n\n"
 
@@ -146,13 +206,13 @@ class Entry:
                     mandatory = "invalid input"
                 m = m.replace(m[m.find("%"):].split()[0], "")
             else:
-                raise Exception("Mandatory is not specified in " + self.key)
-
+                #raise Exception("Mandatory is not specified in " + self.key)
+                mandatory="123"
             key = self.key
             if key.startswith("#"):
                 key = key.replace("#", "", 1)
 
-            return f'| `{key}` | `{mandatory}` | {vartype} | {self.value} | {default} | {m} |'
+            return f'| {key} | {mandatory} | {vartype} | {self.value} | {default} | {m} |'
         else:
             m = '<br />'.join(textwrap.wrap(self.meta, width=50))
             return f'| `{self.key}` | `{self.value}` | {m} |'

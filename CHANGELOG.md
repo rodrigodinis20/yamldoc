@@ -34,6 +34,6 @@ More changes have been made:
 ### NEEDED CHANGES
 
 - Poder adicionar os niveis que quisermos(verificar identação)
-- Adicionar mapas(criar nova tabela)
 - Embed tables para mais que um nivel
+- Adicionar mapas(criar nova tabela)
 - Adicionar hiperligações para tipos complexos(na tabela principal)
