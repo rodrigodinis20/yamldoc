@@ -1,3 +1,4 @@
+import re
 from itertools import cycle
 
 import yamldoc.entries
@@ -13,166 +14,146 @@ def parse_yaml(file_path, char="#'", debug=False):
         file_path: Path to the YAML file.
         char: A character string used to identify yamldoc blocks.
         debug: Print debug information
+        indent_level: level of indentation
+        is_base: to know which table to use
 
     Return:
         List of YAML blocks.
     """
-    # YAML files have key value pairings seperated by 
+    # YAML files have key value pairings seperated by
     # newlines. The most straightforward kind of things to parse will be
     # keyvalue pairs preceded by comments with the Doxygen marker #'
 
-    current_entry = None
     meta = ""
-    things = []
-    values = []
+    md = []
+    first_level = None
+    second_level = None
 
     with open(file_path) as yaml:
-        test_var = [l for l in yaml.readlines() if l.rstrip()]
-        for line in range(len(test_var) - 1):
-            line_var = test_var[line]
-            nspaces = count_indent(line_var)
-            if debug: print(line_var.rstrip())
+        yaml_lines = [l for l in yaml.readlines() if l.rstrip()]
+        for l in range(len(yaml_lines) - 1):
+            line = yaml_lines[l]
+            indent_level = count_indent(line)
+            if debug: print(line.rstrip())
+            if first_level is None:
+                try:
+                    key, value = line.rstrip().split(":", 1)
+                except ValueError:
+                    pass
+                if line.startswith(char):
+                    meta = meta + line.lstrip(char).rstrip()
+                    if debug: print("@\tFound " + str(indent_level) + " indent level.")
 
-            # Either we haven't started yet
-            # or we've just flushed the entry.
-            if current_entry is None:
-                # Find the number of leading spaces.
-                # YAML only uses spaces.
-                if debug: print("@\tFound " + str(nspaces) + " indent level.")
+                elif not value.lstrip():
+                    md.append(yamldoc.entries.Entry("[" + key + "](#" + key + ")", value, meta.lstrip()))
+                    first_level = yamldoc.entries.MetaEntry(key, meta)
+                    if debug: print("@\tFound a meta entry.")
+                    continue
 
-                if nspaces != 0: current_entry = yamldoc.entries.Entry(key, value, meta.lstrip())
-                if nspaces == 0:
-                    current_entry = None
-                    if line_var.startswith(char):
-                        meta = meta + line_var.lstrip(char).rstrip()
-                    else:
-                        key, value = line_var.rstrip().split(":", 1)
+                else:
+                    key, value = line.rstrip().split(":", 1)
+                    md.append(yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip()))
+                    if debug: print("@\tFound an entry.")
+                    meta = ""
 
-                        # If there is no value, this is the beginning of a
-                        # base entry (i.e. there are subentries to follow)
-                        if test_var[line + 1].lstrip(" ").startswith("-") and not value.lstrip():
-                            try:
-                                index = 1
-                                while test_var[line + index].lstrip(" ").startswith("-"):
-                                    values.append(test_var[line + index].lstrip(" ").lstrip("- ").rstrip())
-                                    index = index + 1
-                                    if debug: print("@\tList values")
-                            except IndexError:
-                                pass
-
-                            things.append(yamldoc.entries.Entry(key, values, meta.lstrip()))
-                            values = []
-
-                        elif not value.lstrip():
-                            things.append(yamldoc.entries.Entry("[" + key + "](#" + key + ")", value, meta.lstrip()))
-                            current_entry = yamldoc.entries.MetaEntry(key, meta)
-                            if debug: print("@\tFound a meta entry.")
-                            continue
-
-                        # Otherwise continue on.
-                        else:
-                            things.append(yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip()))
-                            if debug: print("@\tFound an entry.")
-                            meta = ""
-
-            if current_entry is not None:
-                if current_entry.isBase:
-                    if line_var.lstrip(' ').startswith(char):
-                        meta = line_var.lstrip().lstrip(char).rstrip()
+            if (first_level is not None) and (indent_level == 2):
+                if first_level.isBase:
+                    if line.lstrip(' ').startswith(char):
+                        meta = line.lstrip().lstrip(char).rstrip()
                         if debug: print("@\tFound a comment")
-
                     else:
-                        try:
-                            key, value = line_var.lstrip().rstrip().split(":", 1)
-
-                            if test_var[line + 1].lstrip(" ").startswith("-") and not value.lstrip():
-                                try:
-                                    index = 1
-                                    while test_var[line + index].lstrip(" ").startswith("-"):
-                                        values.append(test_var[line + index].lstrip(" ").lstrip("- ").rstrip())
-                                        index = index + 1
-                                        if debug: print("@\tList values")
-                                except IndexError:
-                                    pass
-
-                                current_entry.entries.append(yamldoc.entries.Entry(key, values, meta.lstrip()))
-                                meta = ""
-                                values = []
-                                continue
+                        key, value = line.lstrip().rstrip().split(":", 1)
+                        if value.lstrip():
+                            first_level.entries.append(
+                                yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip()))
+                            if debug:
+                                print("@\tFound a 1st level entry and deposited it in meta.")
+                                print(indent_level)
+                            meta = ""
+                        if count_indent(yaml_lines[l + 1]) == 0:
+                            md.append(first_level)
+                            md.append(second_level)
+                            first_level = None
+                            second_level = None
+                            if debug: print("@\tBACK TO 0")
+                        if not value.lstrip():
+                            if second_level is None:
+                                first_level.entries.append(
+                                    yamldoc.entries.Entry("[" + key + "](#" + key + ")", value.lstrip(' '),
+                                                          meta.lstrip()))
+                                second_level = yamldoc.entries.MetaEntry(key, meta)
+                                if debug: print("@\tFound a 2ND LEVEL meta entry.")
 
                             else:
-                                key, value = line_var.lstrip().rstrip().split(":", 1)
-                                current_entry.entries.append(
-                                    yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip()))
-                                if debug: print("@\tFound an entry and deposited it in meta.")
-                                meta = ""
-                                if len(test_var[line + 1]) - len(test_var[line + 1].lstrip(' ')) != len(line_var) - len(line_var.lstrip(' ')):
-                                    things.append(current_entry)
-                                if len(test_var[line + 1]) - len(test_var[line + 1].lstrip(' ')) < len(line_var) - len(line_var.lstrip(' ')):
-                                    current_entry = None
-                                    if debug: print("@\tLower level entry")
-                                    continue
-                                if not value.lstrip():
-                                    things.append(yamldoc.entries.Entry("[" + key + "](#" + key + ")", value, meta.lstrip()))
-                                    current_entry = yamldoc.entries.MetaEntry(key, meta)
-                                    if debug: print("@\tFound a meta entry.")
+                                md.append(second_level)
+                                second_level = None
+                                first_level.entries.append(
+                                    yamldoc.entries.Entry("[" + key + "](#" + key + ")", value.lstrip(' '),
+                                                          meta.lstrip()))
+                                second_level = yamldoc.entries.MetaEntry(key, meta)
+                                if debug: print("@\tFound ANOTHER 2ND LEVEL meta entry.")
 
-                        except ValueError:
-                            pass
-        #                    # If we're back at 0 indentation, the
-        #                    # block is done and we need to quit.
-        #                    if len(line_var) - len(line_var.lstrip(' ')) == 0:
-        #                        things.append(current_entry)
-        #                        current_entry = None
-        #                        if debug: print("@\ttest debug")
-        #                        continue
-        #
-        #                    # If not, continue parsing the sub entries.
-        #                    elif line_var.lstrip(' ').startswith(char):
-        #                        meta = line_var.lstrip().lstrip(char).rstrip()
-        #                        if debug: print("@\tanother test bugging")
-        #
-        #                    elif test_var[line + 1].lstrip(" ").startswith("-") and test_var[line - 1].lstrip(' ').startswith(char):
-        #                        try:
-        #                            index = 1
-        #                            while test_var[line + index].lstrip(" ").startswith("-"):
-        #                                values.append(test_var[line + index].lstrip(" ").lstrip("- ").rstrip())
-        #                                index = index + 1
-        #                                if debug: print("@\tList values")
-        #                        except IndexError:
-        #                            pass
-        #                        current_entry.entries.append(yamldoc.entries.Entry(key, values, meta.lstrip()))
-        #                        values = []
-        #
-        #                    elif line_var.lstrip(' ').startswith("-"): continue
-        #
-        #                    else:
-        #                        key, value = line_var.lstrip().rstrip().split(":", 1)
-        #                        current_entry.entries.append(yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip()))
-        #                        if debug: print("@\tFound an entry and deposited it in meta.")
-        #                        meta = ""
-        #                        if len(test_var[line + 1]) - len(test_var[line + 1].lstrip(' ')) == 0:
-        #                            things.append(current_entry)
-        #                            current_entry = None
-        #                            if debug: print("@\ttest debug")
-        #                            continue
+            if (second_level is not None) and (indent_level == 4):
+                if second_level.isBase:
+                    if line.lstrip(' ').startswith(char):
+                        meta = line.lstrip().lstrip(char).rstrip()
+                        if debug:
+                            print("@\tFound a comment")
+                    else:
+                        key, value = line.lstrip().rstrip().split(":", 1)
+                        if value.lstrip():
+                            second_level.entries.append(
+                                yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip()))
+                            if debug:
+                                print("@\tFound a 2nd entry and deposited it in meta.")
+                            meta = ""
+                        if count_indent(yaml_lines[l + 1]) == 0:
+                            md.append(first_level)
+                            md.append(second_level)
+                            first_level = None
+                            second_level = None
+                            if debug: print("@\tBACK TO 0")
 
-        # The file might run out
-        # before the final meta
-        # entry is added.
-        try:
-            if current_entry.isBase:
-                things.append(current_entry)
-        except AttributeError:
-            pass
+                        if not value.lstrip():
+                            second_level.entries.append(
+                                yamldoc.entries.Entry("[" + key + "](#" + key + ")", value.lstrip(' '), meta.lstrip()))
+                            if debug: print("@\tFound a 3RD LEVEL meta entry.")
 
-        if test_var[-1] and count_indent(line_var) == 0:
-            if debug: print(nspaces)
-            key, value = test_var[-1].lstrip().rstrip().split(":", 1)
-            things.append(yamldoc.entries.Entry(key, value, meta.lstrip()))
+            continue
 
-    return things
+        if yaml_lines[-1] and (indent_level == 0):
+            if debug: print(indent_level)
+            key, value = yaml_lines[-1].lstrip().rstrip().split(":", 1)
+            md.append(yamldoc.entries.Entry(key, value, meta.lstrip()))
 
+        if yaml_lines[-1] and (indent_level != 0):
+            if indent_level == 2:
+                key, value = yaml_lines[-1].lstrip().rstrip().split(":", 1)
+                first_level.entries.append(yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip()))
+                if debug: print("@\tEND OF DOC AT 1ST LEVEL")
+            if indent_level == 4:
+                key, value = yaml_lines[-1].lstrip().rstrip().split(":", 1)
+                second_level.entries.append(yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip()))
+                if debug: print("@\tEND OF DOC AT 2ND LEVEL")
+            md.append(first_level)
+            md.append(second_level)
+            first_level = None
+            second_level = None
+
+    return md
+
+    #                     if test_var[line + 1].lstrip(" ").startswith("-") and not value.lstrip():
+    #                         try:
+    #                             index = 1
+    #                             while test_var[line + index].lstrip(" ").startswith("-"):
+    #                                 values.append(test_var[line + index].lstrip(" ").lstrip("- ").rstrip())
+    #                                 index = index + 1
+    #                                 if debug: print("@\tList values")
+    #                         except IndexError:
+    #                             pass
+    #
+    #                         things.append(yamldoc.entries.Entry(key, values, meta.lstrip()))
+    #                         values = []
 
 def key_value(line):
     '''
@@ -477,21 +458,24 @@ def main(yaml_path, char="#'", debug=False, schema_path=None, title="Configurati
         print("| :-: | :-: | :-: | :-: | :-: | :-- |")
         values = []
         for value in yaml:
-            if not value.isBase:
-                values.append(value.to_markdown(schema=True))
-                # print(value.to_markdown(schema=True))
+            try:
+                if not value.isBase:
+                    values.append(value.to_markdown(schema=True))
+                    # print(value.to_markdown(schema=True))
+            except AttributeError:
+                pass
 
-        values.sort()
-
-        for v in values:
+        for v in sorted(values, key=lambda x: re.sub('[^A-Za-z]+', '', x).lower()):
             print(v)
 
         print("\n\n")
 
         for value in yaml:
-            if value.isBase:
-                print(value.to_markdown(schema=True))
-
+            try:
+                if value.isBase:
+                    print(value.to_markdown(schema=True))
+            except AttributeError:
+                pass
     else:
         print("# " + title + "\n\n" + description + "\n")
 
