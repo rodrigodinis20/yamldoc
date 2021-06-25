@@ -1,7 +1,6 @@
 import re
 import textwrap
 
-
 class MetaEntry:
     """ 
     A container to hold a base level YAML entry plus any associated
