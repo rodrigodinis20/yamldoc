@@ -41,7 +41,10 @@ class MetaEntry:
 
             if "%" in self.meta:
                 self.meta = self.meta.replace(self.meta[self.meta.find("%"):].split()[0], "")
-
+            if "$" in self.meta:
+                self.meta = self.meta.replace(self.meta[self.meta.find("$"):].split()[0], "")
+            if "@" in self.meta:
+                self.meta = self.meta.replace(self.meta[self.meta.find("@"):].split()[0], "")
             output = f'## `{self.name}`\n\n{self.meta}\n\n'
             output += "### Member variables:\n\n"
 
@@ -113,7 +116,8 @@ class Entry:
             schema: Print with four columns instead of three.
         """
         if schema:
-            m = '<br />'.join(textwrap.wrap(self.meta, width=50))
+            # m = '<br />'.join(textwrap.wrap(self.meta, width=50))
+            m = self.meta
             default = self.default
             if "$" in m:
                 vartype = self.type
@@ -132,7 +136,7 @@ class Entry:
                 if m[m.find("%") + 1:].split()[0] in accepted_types:
                     mandatory = m[m.find("%") + 1:].split()[0]
                     try:
-                        if ("@" in m) and (mandatory == "no"):
+                        if "@" in m:
                             default = m[m.find("@") + 1:].split()[0]
                             m = m.replace(m[m.find("@"):].split()[0], "")
                         elif mandatory == "yes":
@@ -148,7 +152,7 @@ class Entry:
                 m = m.replace(m[m.find("%"):].split()[0], "")
             else:
                 # raise Exception("Mandatory is not specified in " + self.key)
-                mandatory = "123"
+                mandatory = ""
             key = self.key
             if key.startswith("#"):
                 key = key.replace("#", "", 1)

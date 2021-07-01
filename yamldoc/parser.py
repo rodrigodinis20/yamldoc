@@ -51,20 +51,51 @@ def parse_yaml(file_path, char="#'", debug=False):
             line = yaml_lines[l]
             indent_level = count_indent(line)
             if debug: print(line.rstrip())
+            if line.lstrip(" ").startswith("-"):
+                if count_indent(yaml_lines[l + 1]) == 0:
+                    md.append(first_level)
+                    md.append(second_level)
+                    first_level = None
+                    second_level = None
+                    if debug: print("@\tBACK TO 0")
+                line.lstrip(" ")
+                continue
+            if yaml_lines[l + 1].lstrip(" ").startswith("- {"):
+                try:
+                    key, value = line.rstrip().split(":", 1)
+                except ValueError:
+                    key = ""
+                md.append(yamldoc.entries.Entry("[" + key + "](#" + key + ")", value, meta.lstrip()))
+                first_level = yamldoc.entries.MetaEntry(key, meta)
+                if debug: print("@\tFOUND A COLLECTION OF OBJECTS")
+                meta = ""
+                continue
+            if line.lstrip().startswith("}"):
+                continue
+
             if first_level is None:
                 if line.startswith(char):
                     meta = meta + line.lstrip(char).rstrip()
                     if debug: print("@\tFound " + str(indent_level) + " indent level.")
 
-                elif line.lstrip(" ").startswith("-") or line.endswith("-\n"):
-                    if debug: print("@\t TESTE")
-                    pass
-
+                elif line.endswith("-\n"):
+                    if debug: print("@\tLine ignored.")
+                    continue
 
                 else:
+                    if line.lstrip().startswith("#"):
+                        continue
                     key, value = line.rstrip().split(":", 1)
+
                     if not value.lstrip():
-                        if yaml_lines[l + 1].lstrip(" ").startswith("-") and (":" in line):
+                        if yaml_lines[l + 1].lstrip(" ").startswith("- {"):
+                            if debug: print("@\tTEST FKIN COMMENT")
+                            continue
+
+                        if line.lstrip().startswith("- {"):
+                            if debug: print("@\tTESTE AQUI")
+
+                        if yaml_lines[l + 1].lstrip(" ").startswith("-"):
                             try:
                                 index = 1
                                 while yaml_lines[l + index].lstrip(" ").startswith("-"):
@@ -75,7 +106,9 @@ def parse_yaml(file_path, char="#'", debug=False):
                                 pass
 
                             md.append(yamldoc.entries.Entry(key, values, meta.lstrip()))
+                            meta = ""
                             values = []
+
                         else:
                             md.append(yamldoc.entries.Entry("[" + key + "](#" + key + ")", value, meta.lstrip()))
                             first_level = yamldoc.entries.MetaEntry(key, meta)
@@ -91,8 +124,51 @@ def parse_yaml(file_path, char="#'", debug=False):
                     if line.lstrip(' ').startswith(char):
                         meta = meta + line.lstrip().lstrip(char).rstrip()
                         if debug: print("@\tFound a comment")
+
+                    elif line.lstrip(" ").startswith("-") or line.endswith("-\n"):
+                        if count_indent(yaml_lines[l + 1]) == 0:
+                            md.append(first_level)
+                            md.append(second_level)
+                            first_level = None
+                            second_level = None
+                            if debug: print("@\tBACK TO 0")
+                        else:
+                            if debug: print("@\tLine ignored.")
+                            continue
+
                     else:
                         key, value = line.lstrip().rstrip().split(":", 1)
+                        if not value.lstrip():
+                            if second_level is None and not yaml_lines[l + 1].lstrip(" ").startswith("-"):
+                                first_level.entries.append(
+                                    yamldoc.entries.Entry("[" + key + "](#" + key + ")", value.lstrip(' '),
+                                                          meta.lstrip()))
+                                second_level = yamldoc.entries.MetaEntry(key, meta)
+                                if debug: print("@\tFound a 2ND LEVEL meta entry.")
+
+                            elif yaml_lines[l + 1].lstrip(" ").startswith("-") and (":" in line):
+                                try:
+                                    index = 1
+                                    while yaml_lines[l + index].lstrip(" ").startswith("-"):
+                                        values.append(yaml_lines[l + index].lstrip(" ").lstrip("- ").rstrip())
+                                        index = index + 1
+                                        if debug: print("@\tList values")
+                                except IndexError:
+                                    pass
+
+                                first_level.entries.append(yamldoc.entries.Entry(key, values, meta.lstrip()))
+                                values = []
+                                meta = ""
+
+                            else:
+                                md.append(second_level)
+                                second_level = None
+                                first_level.entries.append(
+                                    yamldoc.entries.Entry("[" + key + "](#" + key + ")", value.lstrip(' '),
+                                                          meta.lstrip()))
+                                second_level = yamldoc.entries.MetaEntry(key, meta)
+                                if debug: print("@\tFound ANOTHER 2ND LEVEL meta entry.")
+
                         if value.lstrip():
                             first_level.entries.append(
                                 yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip()))
@@ -107,42 +183,24 @@ def parse_yaml(file_path, char="#'", debug=False):
                             second_level = None
                             if debug: print("@\tBACK TO 0")
 
-                        if not value.lstrip():
-                            if second_level is None:
-                                first_level.entries.append(
-                                    yamldoc.entries.Entry("[" + key + "](#" + key + ")", value.lstrip(' '),
-                                                          meta.lstrip()))
-                                second_level = yamldoc.entries.MetaEntry(key, meta)
-                                if debug: print("@\tFound a 2ND LEVEL meta entry.")
-
-                            if yaml_lines[l + 1].lstrip(" ").startswith("-") and (":" in line):
-                                try:
-                                    index = 1
-                                    while yaml_lines[l + index].lstrip(" ").startswith("-"):
-                                        values.append(yaml_lines[l + index].lstrip(" ").lstrip("- ").rstrip())
-                                        index = index + 1
-                                        if debug: print("@\tList values")
-                                except IndexError:
-                                    pass
-
-                                md.append(yamldoc.entries.Entry(key, values, meta.lstrip()))
-                                values = []
-
-                            else:
-                                md.append(second_level)
-                                second_level = None
-                                first_level.entries.append(
-                                    yamldoc.entries.Entry("[" + key + "](#" + key + ")", value.lstrip(' '),
-                                                          meta.lstrip()))
-                                second_level = yamldoc.entries.MetaEntry(key, meta)
-                                if debug: print("@\tFound ANOTHER 2ND LEVEL meta entry.")
-
             if (second_level is not None) and (indent_level == 4):
                 if second_level.isBase:
                     if line.lstrip(' ').startswith(char):
-                        meta = line.lstrip().lstrip(char).rstrip()
+                        meta = meta + line.lstrip().lstrip(char).rstrip()
                         if debug:
                             print("@\tFound a comment")
+
+                    elif line.lstrip(" ").startswith("-") or line.endswith("-\n"):
+                        if count_indent(yaml_lines[l + 1]) == 0:
+                            md.append(first_level)
+                            md.append(second_level)
+                            first_level = None
+                            second_level = None
+                            if debug: print("@\tBACK TO 0")
+                        else:
+                            if debug: print("@\tLine ignored.")
+                            pass
+
                     else:
                         key, value = line.lstrip().rstrip().split(":", 1)
                         if value.lstrip():
@@ -157,12 +215,43 @@ def parse_yaml(file_path, char="#'", debug=False):
                             first_level = None
                             second_level = None
                             if debug: print("@\tBACK TO 0")
+                            continue
 
                         if not value.lstrip():
-                            second_level.entries.append(
-                                yamldoc.entries.Entry("[" + key + "](#" + key + ")", value.lstrip(' '), meta.lstrip()))
-                            if debug: print("@\tFound a 3RD LEVEL meta entry.")
+                            if yaml_lines[l + 1].lstrip(" ").startswith("-") and (":" in line):
+                                try:
+                                    index = 1
+                                    while yaml_lines[l + index].lstrip(" ").startswith("-"):
+                                        values.append(yaml_lines[l + index].lstrip(" ").lstrip("- ").rstrip())
+                                        index = index + 1
+                                        if debug: print("@\tList values")
+                                except IndexError:
+                                    pass
 
+                                second_level.entries.append(yamldoc.entries.Entry(key, values, meta.lstrip()))
+                                values = []
+                                meta = ""
+                            else:
+                                second_level.entries.append(
+                                    yamldoc.entries.Entry("[" + key + "](#" + key + ")", value.lstrip(' '), meta.lstrip()))
+                                if debug: print("@\tFound a 3RD LEVEL meta entry.")
+
+            if second_level is None and indent_level == 4:
+                if line.lstrip(' ').startswith(char):
+                    meta = meta + line.lstrip().lstrip(char).rstrip()
+                    if debug:
+                        print("@\tFound a comment")
+                else:
+                    key, value = line.lstrip().rstrip().split(":", 1)
+                    first_level.entries.append(
+                        yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip()))
+                    if debug:
+                        print("@\tFOUND AND OBJECT ENTRY.")
+                    meta = ""
+                    if yaml_lines[l + 1].lstrip(" ").startswith("}"):
+                        if debug: print("@\tEND OF OBJECT")
+                        md.append(first_level)
+                        first_level = None
             continue
 
         if yaml_lines[-1] and (indent_level == 0):
@@ -171,11 +260,17 @@ def parse_yaml(file_path, char="#'", debug=False):
             md.append(yamldoc.entries.Entry(key, value, meta.lstrip()))
 
         if yaml_lines[-1] and (indent_level != 0):
-            if indent_level == 2:
+            if yaml_lines[-1].lstrip().startswith("}"):
+                md.append(first_level)
+                md.append(second_level)
+                first_level = None
+                second_level = None
+
+            elif indent_level == 2:
                 key, value = yaml_lines[-1].lstrip().rstrip().split(":", 1)
                 first_level.entries.append(yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip()))
                 if debug: print("@\tEND OF DOC AT 1ST LEVEL")
-            if indent_level == 4:
+            elif indent_level == 4:
                 key, value = yaml_lines[-1].lstrip().rstrip().split(":", 1)
                 second_level.entries.append(yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip()))
                 if debug: print("@\tEND OF DOC AT 2ND LEVEL")
@@ -185,20 +280,6 @@ def parse_yaml(file_path, char="#'", debug=False):
             second_level = None
 
     return md
-
-    #                     if test_var[line + 1].lstrip(" ").startswith("-") and not value.lstrip():
-    #                         try:
-    #                             index = 1
-    #                             while test_var[line + index].lstrip(" ").startswith("-"):
-    #                                 values.append(test_var[line + index].lstrip(" ").lstrip("- ").rstrip())
-    #                                 index = index + 1
-    #                                 if debug: print("@\tList values")
-    #                         except IndexError:
-    #                             pass
-    #
-    #                         things.append(yamldoc.entries.Entry(key, values, meta.lstrip()))
-    #                         values = []
-
 
 def key_value(line):
     '''
