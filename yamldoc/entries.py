@@ -1,6 +1,7 @@
 import re
 import textwrap
 
+
 class MetaEntry:
     """ 
     A container to hold a base level YAML entry plus any associated
@@ -59,7 +60,6 @@ class MetaEntry:
             for entry in sorted(entries, key=lambda x: re.sub('[^A-Za-z]+', '', x).lower()):
                 output += entry
             output += "\n\n"
-
 
             return output
 
