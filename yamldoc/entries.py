@@ -46,7 +46,7 @@ class MetaEntry:
                 self.meta = self.meta.replace(self.meta[self.meta.find("$"):].split()[0], "")
             if "@" in self.meta:
                 self.meta = self.meta.replace(self.meta[self.meta.find("@"):].split()[0], "")
-            output = f'## `{self.name}`\n\n{self.meta}\n\n'
+            output = f'## {self.name}\n\n{self.meta}\n\n'
             output += "### Member variables:\n\n"
 
             output += "| Parameter | Mandatory | Type | Example | Default | Information |\n"
