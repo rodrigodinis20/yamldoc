@@ -39,9 +39,20 @@ def parse_yaml(file_path, char="#'", debug=False):
     with open(file_path) as yaml:
         yaml_lines = [l for l in yaml.readlines() if l.rstrip()]
         last_line = yaml_lines[-1]
+
+        if last_line.startswith("#") and not last_line.startswith(char):
+            last_line = "".join(yaml_lines[-1].split("#", 1))
+
         for l in range(len(yaml_lines) -1):
+
             line = yaml_lines[l]
+            if line.startswith("#") and not line.startswith(char):
+                line = "".join(yaml_lines[l].split("#", 1))
+
             next_line = yaml_lines[l + 1]
+            if next_line.startswith("#") and not next_line.startswith(char):
+                next_line = "".join(yaml_lines[l + 1].split("#", 1))
+
             indent_level = count_indent(line)
             if debug:
                 print(line.rstrip())
@@ -129,6 +140,7 @@ def parse_yaml(file_path, char="#'", debug=False):
                     md.append(yamldoc.entries.Entry(key, block_values, meta.lstrip()))
                     block_var = None
                     block_values = ""
+                    meta = ""
                 continue
 
             if first_level is None:
@@ -159,8 +171,8 @@ def parse_yaml(file_path, char="#'", debug=False):
                         if next_line.lstrip(" ").startswith("-"):
                             try:
                                 index = 1
-                                while yaml_lines[l + index].lstrip(" ").startswith("-"):
-                                    values.append(yaml_lines[l + index].lstrip(" ").lstrip("- ").rstrip())
+                                while yaml_lines[l + index].lstrip("#").lstrip(" ").startswith("-"):
+                                    values.append(yaml_lines[l + index].lstrip("#").lstrip(" ").lstrip("- ").rstrip())
                                     index = index + 1
                                     if debug: print("@\tList values")
                             except IndexError:
@@ -211,8 +223,8 @@ def parse_yaml(file_path, char="#'", debug=False):
                             elif next_line.lstrip(" ").startswith("-") and (":" in line):
                                 try:
                                     index = 1
-                                    while yaml_lines[l + index].lstrip(" ").startswith("-"):
-                                        values.append(yaml_lines[l + index].lstrip(" ").lstrip("- ").rstrip())
+                                    while yaml_lines[l + index].lstrip("#").lstrip(" ").startswith("-"):
+                                        values.append(yaml_lines[l + index].lstrip("#").lstrip(" ").lstrip("- ").rstrip())
                                         index = index + 1
                                         if debug: print("@\tList values")
                                 except IndexError:
