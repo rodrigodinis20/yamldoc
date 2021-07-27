@@ -49,7 +49,7 @@ class MetaEntry:
             output = f'## {self.name}\n\n{self.meta}\n\n'
             output += "### Member variables:\n\n"
 
-            output += "| Parameter | Mandatory | Type | Example | Default | Information |\n"
+            output += "| Parameter | Mandatory | Type | Default | Example | Information |\n"
             output += "| :-: | :-: | :-: | :-: | :-: | :-- |\n"
 
             entries = []
@@ -137,8 +137,8 @@ class Entry:
                     mandatory = m[m.find("%") + 1:].split()[0]
                     try:
                         if "@" in m:
-                            default = m[m.find("@") + 1:].split()[0]
-                            m = m.replace(m[m.find("@"):].split()[0], "")
+                            default = m.split("@", 1)[1]
+                            m = m.replace(m.split("@", 1)[1], "")
                         elif mandatory == "yes":
                             default = ""
                         else:
@@ -157,7 +157,7 @@ class Entry:
             if key.startswith("#"):
                 key = key.replace("#", "", 1)
 
-            return f'| {key} | {mandatory} | {vartype} | {self.value} | {default} | {m} |'
+            return f'| {key} | {mandatory} | {vartype} | {default} | {self.value} | {m} |'
         else:
             m = '<br />'.join(textwrap.wrap(self.meta, width=50))
             return f'| `{self.key}` | `{self.value}` | {m} |'
