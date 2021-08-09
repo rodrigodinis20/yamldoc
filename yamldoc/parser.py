@@ -26,7 +26,7 @@ def parse_yaml(file_path, char="#'", debug=False):
 
     meta = ""
     md = []
-    values = []
+    values = ""
     block_values = ""
     first_level = None
     second_level = None
@@ -78,6 +78,7 @@ def parse_yaml(file_path, char="#'", debug=False):
             if line.rstrip().endswith(">-"):
                 key, value = line.rstrip().split(":", 1)
                 block_var = yamldoc.entries.Entry(key, "", meta)
+                block_values = " >- <br></br>"
                 if debug: print("@\tENTROU")
                 continue
 
@@ -86,7 +87,8 @@ def parse_yaml(file_path, char="#'", debug=False):
                 if line.lstrip().startswith("- {"):
                     continue
                 if line.lstrip(' ').startswith(char):
-                    meta = meta + line.lstrip().lstrip(char).rstrip()
+                    stupid_line = line.lstrip(" ")
+                    meta = meta + stupid_line.lstrip(char).rstrip()
                     if debug:
                         print("@\tFound a comment")
                 else:
@@ -134,7 +136,7 @@ def parse_yaml(file_path, char="#'", debug=False):
                     if debug: print("@\tReset map_var e create new table")
                 continue
             if block_var is not None and line.lstrip().startswith("-"):
-                block_values += line.lstrip(" -").rstrip() + ", "
+                block_values += line.rstrip() + "<br></br>"
                 if debug: print("@\tAdded string to values")
                 if count_indent(next_line) != count_indent(line):
                     md.append(yamldoc.entries.Entry(key, block_values, meta.lstrip()))
@@ -172,7 +174,7 @@ def parse_yaml(file_path, char="#'", debug=False):
                             try:
                                 index = 1
                                 while yaml_lines[l + index].lstrip("#").lstrip(" ").startswith("-"):
-                                    values.append(yaml_lines[l + index].lstrip("#").lstrip(" ").lstrip("- ").rstrip())
+                                    values += yaml_lines[l + index].lstrip("#").lstrip(" ").rstrip() + "<br></br>"
                                     index = index + 1
                                     if debug: print("@\tList values")
                             except IndexError:
@@ -180,7 +182,7 @@ def parse_yaml(file_path, char="#'", debug=False):
 
                             md.append(yamldoc.entries.Entry(key, values, meta.lstrip()))
                             meta = ""
-                            values = []
+                            values = ""
 
                         else:
                             md.append(yamldoc.entries.Entry("[" + key + "](#" + key + ")", value, meta.lstrip()))
@@ -195,7 +197,8 @@ def parse_yaml(file_path, char="#'", debug=False):
             if (first_level is not None) and (indent_level == 2):
                 if first_level.isBase:
                     if line.lstrip(' ').startswith(char):
-                        meta = meta + line.lstrip().lstrip(char).rstrip()
+                        stupid_line = line.lstrip(" ")
+                        meta = meta + stupid_line.lstrip(char).rstrip()
                         if debug: print("@\tFound a comment")
 
                     elif line.lstrip(" ").startswith("-") or line.endswith("-\n"):
@@ -224,14 +227,14 @@ def parse_yaml(file_path, char="#'", debug=False):
                                 try:
                                     index = 1
                                     while yaml_lines[l + index].lstrip("#").lstrip(" ").startswith("-"):
-                                        values.append(yaml_lines[l + index].lstrip("#").lstrip(" ").lstrip("- ").rstrip())
+                                        values += yaml_lines[l + index].lstrip("#").lstrip(" ").rstrip() + "<br></br>"
                                         index = index + 1
                                         if debug: print("@\tList values")
                                 except IndexError:
                                     pass
 
                                 first_level.entries.append(yamldoc.entries.Entry(key, values, meta.lstrip()))
-                                values = []
+                                values = ""
                                 meta = ""
 
                             else:
@@ -259,7 +262,8 @@ def parse_yaml(file_path, char="#'", debug=False):
             if (second_level is not None) and (indent_level == 4):
                 if second_level.isBase:
                     if line.lstrip(' ').startswith(char):
-                        meta = meta + line.lstrip().lstrip(char).rstrip()
+                        stupid_line = line.lstrip(" ")
+                        meta = meta + stupid_line.lstrip(char).rstrip()
                         if debug:
                             print("@\tFound a comment")
 

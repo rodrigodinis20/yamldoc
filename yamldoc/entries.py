@@ -119,8 +119,8 @@ class Entry:
             # m = '<br />'.join(textwrap.wrap(self.meta, width=50))
             m = self.meta
             default = self.default
+            vartype = self.type
             if "$" in m:
-                vartype = self.type
                 accepted_types = ["byte", "boolean", "string", "integer", "long", "double", "char", "float", "short"]
                 if m[m.find("$") + 1:].split()[0] in accepted_types:
                     vartype = m[m.find("$") + 1:].split()[0]
@@ -142,8 +142,8 @@ class Entry:
                         elif mandatory == "yes":
                             default = ""
                         else:
-                            default = "Default value is not specified"
-                            # m = m.replace(m[m.find("@"):].split()[0], "")
+                            default = self.value
+
                     except IndexError:
                         default = "Default value is not specified"
                         m = m.replace(m[m.find("@"):].split()[0], "")
@@ -151,7 +151,6 @@ class Entry:
                     mandatory = "invalid input"
                 m = m.replace(m[m.find("%"):].split()[0], "")
             else:
-                # raise Exception("Mandatory is not specified in " + self.key)
                 mandatory = ""
             key = self.key
             if key.startswith("#"):
