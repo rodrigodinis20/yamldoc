@@ -97,14 +97,14 @@ class Entry:
         self.isBase = False
         self.type = None
         self.mandatory = None
-        self.default = "Mandatory is not specified"
+        self.example = "Mandatory is not specified"
 
     def __repr__(self):
         """
         Gives a print representation for the class.
         """
         if self.type is not None:
-            return f'YAML Entry [{self.key}: {self.value}]\n\t Meta: {self.meta}\n\t Type: {self.type}\n\t Mandatory: {self.mandatory}\n\t Default: {self.default}'
+            return f'YAML Entry [{self.key}: {self.value}]\n\t Meta: {self.meta}\n\t Type: {self.type}\n\t Mandatory: {self.mandatory}\n\t Example: {self.example}'
         else:
             return f'YAML Entry [{self.key}: {self.value}]\n\t Meta: {self.meta}'
 
@@ -118,7 +118,7 @@ class Entry:
         if schema:
             # m = '<br />'.join(textwrap.wrap(self.meta, width=50))
             m = self.meta
-            default = self.default
+            example = self.example
             vartype = self.type
             if "$" in m:
                 accepted_types = ["byte", "boolean", "string", "integer", "long", "double", "char", "float", "short"]
@@ -137,15 +137,20 @@ class Entry:
                     mandatory = m[m.find("%") + 1:].split()[0]
                     try:
                         if "@" in m:
-                            default = m.split("@", 1)[1]
+
+                            example = m.split("@", 1)[1]
+                            example = example.replace("@", "<br>")
+                            example = example.replace("<br>", "", 0)
+
+
                             m = m.replace(m.split("@", 1)[1], "")
                         elif mandatory == "yes":
-                            default = ""
+                            example = ""
                         else:
-                            default = self.value
+                            example = self.value
 
                     except IndexError:
-                        default = "Default value is not specified"
+                        example = "Example is not specified"
                         m = m.replace(m[m.find("@"):].split()[0], "")
                 else:
                     mandatory = "invalid input"
@@ -156,7 +161,7 @@ class Entry:
             if key.startswith("#"):
                 key = key.replace("#", "", 1)
 
-            return f'| {key} | {mandatory} | {vartype} | {default} | {self.value} | {m} |'
+            return f'| {key} | {mandatory} | {vartype} | {self.value.replace(" ", "&nbsp;")} | {example.replace(" ", "&nbsp;")} | {m.replace(" ", "&nbsp;")} |'
         else:
             m = '<br />'.join(textwrap.wrap(self.meta, width=50))
-            return f'| `{self.key}` | `{self.value}` | {m} |'
+            return f'| `{self.key}` | `{self.value.replace(" ", "&nbsp;")}` | {m.replace(" ", "&nbsp;")} |'

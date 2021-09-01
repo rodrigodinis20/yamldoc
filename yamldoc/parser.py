@@ -78,7 +78,7 @@ def parse_yaml(file_path, char="#'", debug=False):
             if line.rstrip().endswith(">-"):
                 key, value = line.rstrip().split(":", 1)
                 block_var = yamldoc.entries.Entry(key, "", meta)
-                block_values = " >- <br></br>"
+                block_values = " >-"
                 if debug: print("@\tENTROU")
                 continue
 
@@ -136,7 +136,7 @@ def parse_yaml(file_path, char="#'", debug=False):
                     if debug: print("@\tReset map_var e create new table")
                 continue
             if block_var is not None and line.lstrip().startswith("-"):
-                block_values += line.rstrip() + "<br></br>"
+                block_values += "<br>  " + line.rstrip()
                 if debug: print("@\tAdded string to values")
                 if count_indent(next_line) != count_indent(line):
                     md.append(yamldoc.entries.Entry(key, block_values, meta.lstrip()))
@@ -174,7 +174,7 @@ def parse_yaml(file_path, char="#'", debug=False):
                             try:
                                 index = 1
                                 while yaml_lines[l + index].lstrip("#").lstrip(" ").startswith("-"):
-                                    values += yaml_lines[l + index].lstrip("#").lstrip(" ").rstrip() + "<br></br>"
+                                    values += yaml_lines[l + index].lstrip("#").lstrip(" ").rstrip() + "<br>"
                                     index = index + 1
                                     if debug: print("@\tList values")
                             except IndexError:
@@ -227,7 +227,7 @@ def parse_yaml(file_path, char="#'", debug=False):
                                 try:
                                     index = 1
                                     while yaml_lines[l + index].lstrip("#").lstrip(" ").startswith("-"):
-                                        values += yaml_lines[l + index].lstrip("#").lstrip(" ").rstrip() + "<br></br>"
+                                        values += yaml_lines[l + index].lstrip("#").lstrip(" ").rstrip() + "<br>"
                                         index = index + 1
                                         if debug: print("@\tList values")
                                 except IndexError:
