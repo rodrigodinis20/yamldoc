@@ -135,33 +135,24 @@ class Entry:
                 accepted_types = ["yes", "no"]
                 if m[m.find("%") + 1:].split()[0] in accepted_types:
                     mandatory = m[m.find("%") + 1:].split()[0]
-                    try:
-                        if "@" in m:
-
-                            example = m.split("@", 1)[1]
-                            example = example.replace("@", "<br>")
-                            example = example.replace("<br>", "", 0)
-
-
-                            m = m.replace(m.split("@", 1)[1], "")
-                        elif mandatory == "yes":
-                            example = ""
-                        else:
-                            example = self.value
-
-                    except IndexError:
-                        example = "Example is not specified"
-                        m = m.replace(m[m.find("@"):].split()[0], "")
                 else:
                     mandatory = "invalid input"
                 m = m.replace(m[m.find("%"):].split()[0], "")
             else:
                 mandatory = ""
-            key = self.key
-            if key.startswith("#"):
-                key = key.replace("#", "", 1)
 
-            return f'| {key} | {mandatory} | {vartype} | {self.value.replace(" ", "&nbsp;")} | {example.replace(" ", "&nbsp;")} | {m.replace(" ", "&nbsp;")} |'
+            if "@" in m:
+                example = m.split("@", 1)[1]
+                example = example.replace("@", "<br>")
+                example = example.replace("<br>", "", 0)
+
+                m = m.replace(m.split("@", 1)[1], "")
+                m = m.replace("@", "")
+
+            else:
+                example = self.key + ": " + self.value
+
+            return f'| {self.key} | {mandatory} | {vartype} | {self.value.replace(" ", "&nbsp;")} | {example.replace(" ", "&nbsp;")} | {m.replace(" ", "&nbsp;")} |'
         else:
             m = '<br />'.join(textwrap.wrap(self.meta, width=50))
             return f'| `{self.key}` | `{self.value.replace(" ", "&nbsp;")}` | {m.replace(" ", "&nbsp;")} |'

@@ -32,9 +32,6 @@ def parse_yaml(file_path, char="#'", debug=False):
     second_level = None
     object_var = None
     block_var = None
-    map_var = None
-    map_key = None
-    map_value = None
 
     with open(file_path) as yaml:
         yaml_lines = [l for l in yaml.readlines() if l.rstrip()]
@@ -114,27 +111,7 @@ def parse_yaml(file_path, char="#'", debug=False):
                         print("@\tFOUND AN OBJECT ENTRY.")
                     meta = ""
                 continue
-            if map_var is not None:
-                if line.lstrip(" ").startswith("- "):
-                    map_key = line.lstrip(" ").rstrip().split(":", 1)[1]
-                    if debug: print("@\tFound and registered a map key")
 
-                if count_indent(line) == 4:
-                    map_value = line.lstrip(" ").rstrip().split(":", 1)[1]
-                    if debug: print("@\tFound and registered a map value")
-
-                if map_key is not None and map_value is not None:
-                    meta = ""
-                    map_var.entries.append(yamldoc.entries.Entry(map_key, map_value, meta))
-                    map_key = None
-                    map_value = None
-                    if debug: print("@\tAdded a map entry")
-
-                if count_indent(yaml_lines[l + 1]) == 0:
-                    md.append(map_var)
-                    map_var = None
-                    if debug: print("@\tReset map_var e create new table")
-                continue
             if block_var is not None and line.lstrip().startswith("-"):
                 block_values += "<br>  " + line.rstrip()
                 if debug: print("@\tAdded string to values")
@@ -160,16 +137,6 @@ def parse_yaml(file_path, char="#'", debug=False):
                     except ValueError:
                         continue
                     if not value.lstrip():
-                        if yaml_lines[l + 1].lstrip(" ").startswith("-") and count_indent(yaml_lines[l + 2]) == 4 and yaml_lines[l - 1].startswith(char):
-                            map_var = yamldoc.entries.MetaEntry(key, meta)
-                            map_key = line.split(":", 1)[0]
-                            example_values = []
-                            example_values.append(yaml_lines[l + 1].lstrip(" ").lstrip("- ").rstrip())
-                            example_values.append(yaml_lines[l + 2].lstrip(" ").rstrip())
-                            md.append(yamldoc.entries.Entry("[" + map_key + "](#" + map_key + ")", example_values, meta.lstrip()))
-                            if debug: print("@\tFound a map")
-                            continue
-
                         if next_line.lstrip(" ").startswith("-"):
                             try:
                                 index = 1
@@ -314,13 +281,6 @@ def parse_yaml(file_path, char="#'", debug=False):
                                                           meta.lstrip()))
                                 if debug: print("@\tFound a 3RD LEVEL meta entry.")
 
-            # if map_case is not None:
-            #     if count_indent(next_line) == 0:
-            #         md.append(map_case)
-            #         map_case = []
-            #     if line.lstrip().startswith("-"):
-            #
-            #     else:
 
         # For some reason, it doesn't parse the last line
         if last_line and (indent_level == 0):
@@ -328,23 +288,8 @@ def parse_yaml(file_path, char="#'", debug=False):
             md.append(yamldoc.entries.Entry(key, value, meta.lstrip()))
 
         if last_line and (indent_level != 0):
-            if map_var is not None:
-                if debug:
-                    print(last_line.rstrip())
-                    print(indent_level)
-                map_value = last_line.lstrip(" ").rstrip().split(":", 1)[1]
-                if debug: print("@\tFound and registered a map value")
-                if map_key is not None and map_value is not None:
-                    meta = ""
-                    map_var.entries.append(yamldoc.entries.Entry(map_key, map_value, meta))
-                    map_key = None
-                    map_value = None
-                    if debug: print("@\tAdded a map entry")
-                md.append(map_var)
-                map_var = None
-                if debug: print("@\tReset map_var e create new table")
 
-            elif last_line.lstrip().startswith("}"):
+            if last_line.lstrip().startswith("}"):
                 md.append(first_level)
                 md.append(second_level)
                 first_level = None
