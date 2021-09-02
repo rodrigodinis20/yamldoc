@@ -61,7 +61,7 @@ def parse_yaml(file_path, char="#'", debug=False):
             if debug:
                 print(line.rstrip())
                 print(indent_level)
-            if line.lstrip(" ").startswith("-"):
+            if line.lstrip(" ").startswith("-") and first_level is None and second_level is None:
                 if count_indent(next_line) == 0:
                     md.append(first_level)
                     md.append(second_level)
@@ -79,14 +79,8 @@ def parse_yaml(file_path, char="#'", debug=False):
                 meta = ""
                 continue
 
-            if line.rstrip().endswith(">-"):
-                key, value = line.rstrip().split(":", 1)
-                block_values = " >-"
-                block_var = yamldoc.entries.Entry(key, block_values, meta, is_commented)
-                if debug: print("@\tENTROU")
-                continue
 
-                # Object/ Collection of objects logic
+            # Object/ Collection of objects logic
             if object_var is not None:
                 if line.lstrip().startswith("- {"):
                     continue
@@ -98,9 +92,14 @@ def parse_yaml(file_path, char="#'", debug=False):
                 else:
                     if line.lstrip().startswith("}") and not next_line.lstrip(" -").startswith("{"):
                         if debug: print("@\tEND OF OBJECT COLLECTION")
-                        md.append(object_var)
-                        object_var = None
-                        continue
+                        if count_indent(line) == 4:
+                            first_level.entries.append(object_var)
+                            object_var = None
+                            continue
+                        else:
+                            md.append(object_var)
+                            object_var = None
+                            continue
 
                     if line.lstrip().startswith("}") and next_line.lstrip(" -").startswith("{"):
                         if debug: print("@\tEND OF OBJECT")
@@ -119,16 +118,6 @@ def parse_yaml(file_path, char="#'", debug=False):
                     meta = ""
                 continue
 
-            if block_var is not None and line.lstrip().startswith("-"):
-                block_values += "<br>  " + line.rstrip()
-                if debug: print("@\tAdded string to values")
-                if count_indent(next_line) != count_indent(line):
-                    md.append(yamldoc.entries.Entry(key, block_values, meta.lstrip(), is_commented))
-                    block_var = None
-                    block_values = ""
-                    meta = ""
-                continue
-
             if first_level is None:
                 if line.startswith(char):
                     meta = meta + line.lstrip(char).rstrip()
@@ -136,6 +125,15 @@ def parse_yaml(file_path, char="#'", debug=False):
 
                 elif line.lstrip().startswith("-") and line.endswith("-\n"):
                     if debug: print("@\tLine ignored.")
+                    continue
+                elif block_var is not None and line.lstrip().startswith("-"):
+                    block_values += "<br>  " + line.rstrip()
+                    if debug: print("@\tAdded string to values")
+                    if count_indent(next_line) != count_indent(line):
+                        md.append(yamldoc.entries.Entry(key, block_values, meta.lstrip(), is_commented))
+                        block_var = None
+                        block_values = ""
+                        meta = ""
                     continue
 
                 else:
@@ -164,19 +162,27 @@ def parse_yaml(file_path, char="#'", debug=False):
                             if debug: print("@\tFound a meta entry.")
                             meta = ""
                             continue
+
+                    elif line.rstrip().endswith(">-"):
+                        key, value = line.rstrip().split(":", 1)
+                        block_values = " >-"
+                        block_var = yamldoc.entries.Entry(key, block_values, meta, is_commented)
+                        if debug: print("@\tENTROU em base")
+                        continue
+
                     else:
                         md.append(yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip(), is_commented))
                         if debug: print("@\tFound an entry.")
                         meta = ""
 
-            if (first_level is not None) and (indent_level == 2):
+            if first_level is not None and second_level is None:
                 if first_level.isBase:
                     if line.lstrip(' ').startswith(char):
                         stupid_line = line.lstrip(" ")
                         meta = meta + stupid_line.lstrip(char).rstrip()
                         if debug: print("@\tFound a comment")
 
-                    elif line.lstrip(" ").startswith("-") or line.endswith("-\n"):
+                    elif line.lstrip(" ").startswith("-") and block_var is None:
                         if count_indent(next_line) == 0:
                             md.append(first_level)
                             md.append(second_level)
@@ -186,7 +192,15 @@ def parse_yaml(file_path, char="#'", debug=False):
                         else:
                             if debug: print("@\tLine ignored.")
                             continue
-
+                    elif block_var is not None and line.lstrip().startswith("-"):
+                        block_values += "<br>  " + line.rstrip()
+                        if debug: print("@\tAdded string to values")
+                        if count_indent(next_line) != count_indent(line):
+                            first_level.entries.append(yamldoc.entries.Entry(key, block_values, meta.lstrip(), is_commented))
+                            block_var = None
+                            block_values = ""
+                            meta = ""
+                        continue
                     else:
                         key, value = line.lstrip().rstrip().split(":", 1)
                         if not value.lstrip():
@@ -197,6 +211,7 @@ def parse_yaml(file_path, char="#'", debug=False):
                                 second_level = yamldoc.entries.MetaEntry(key, meta)
                                 if debug: print("@\tFound a 2ND LEVEL meta entry.")
                                 meta = ""
+                                continue
 
                             elif next_line.lstrip(" ").startswith("-") and (":" in line):
                                 try:
@@ -221,12 +236,20 @@ def parse_yaml(file_path, char="#'", debug=False):
                                 second_level = yamldoc.entries.MetaEntry(key, meta)
                                 if debug: print("@\tFound ANOTHER 2ND LEVEL meta entry.")
 
+                        if line.rstrip().endswith(">-"):
+                            key, value = line.rstrip().split(":", 1)
+                            block_values = " >-"
+                            block_var = yamldoc.entries.Entry(key, block_values, meta, is_commented)
+                            if debug: print("@\tENTROU em first level")
+                            continue
+
                         if value.lstrip():
                             first_level.entries.append(
                                 yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip(), is_commented))
                             if debug:
                                 print("@\tFound a 1st level entry and deposited it in meta.")
                             meta = ""
+
                         if count_indent(next_line) == 0:
                             md.append(first_level)
                             md.append(second_level)
@@ -234,7 +257,7 @@ def parse_yaml(file_path, char="#'", debug=False):
                             second_level = None
                             if debug: print("@\tBACK TO 0")
 
-            if (second_level is not None) and (indent_level == 4):
+            if second_level is not None:
                 if second_level.isBase:
                     if line.lstrip(' ').startswith(char):
                         stupid_line = line.lstrip(" ")
@@ -242,7 +265,7 @@ def parse_yaml(file_path, char="#'", debug=False):
                         if debug:
                             print("@\tFound a comment")
 
-                    elif line.lstrip(" ").startswith("-") or line.endswith("-\n"):
+                    elif line.lstrip(" ").startswith("-") and block_var is None:
                         if count_indent(next_line) == 0:
                             md.append(first_level)
                             md.append(second_level)
@@ -252,23 +275,41 @@ def parse_yaml(file_path, char="#'", debug=False):
                         else:
                             if debug: print("@\tLine ignored.")
                             pass
-
-                    else:
-                        key, value = line.lstrip().rstrip().split(":", 1)
-                        if value.lstrip():
-                            second_level.entries.append(
-                                yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip(), is_commented))
-                            if debug:
-                                print("@\tFound a 2nd entry and deposited it in meta.")
+                    elif block_var is not None and line.lstrip().startswith("-"):
+                        block_values += "<br>  " + line.rstrip()
+                        if debug: print("@\tAdded string to values")
+                        if count_indent(next_line) == 4:
+                            second_level.entries.append(yamldoc.entries.Entry(key, block_values, meta.lstrip(), is_commented))
+                            block_var = None
+                            block_values = ""
                             meta = ""
-                        if count_indent(next_line) == 0:
-                            md.append(first_level)
+                            if debug: print("@\tEnd of 2ndlvl block, continue on 2nd level")
+                            continue
+                        elif count_indent(next_line) == 2:
+                            second_level.entries.append(
+                                yamldoc.entries.Entry(key, block_values, meta.lstrip(), is_commented))
                             md.append(second_level)
+                            second_level = None
+                            block_var = None
+                            block_values = ""
+                            meta = ""
+                            if debug: print("@\tEnd of 2ndlvl block, back to first level")
+                            continue
+                        elif count_indent(next_line) == 0:
+                            second_level.entries.append(
+                                yamldoc.entries.Entry(key, block_values, meta.lstrip(), is_commented))
+                            md.append(second_level)
+                            md.append(first_level)
                             first_level = None
                             second_level = None
-                            if debug: print("@\tBACK TO 0")
+                            block_var = None
+                            block_values = ""
+                            meta = ""
+                            if debug: print("@\tEnd of 2ndlvl block, back to 0")
                             continue
-
+                        continue
+                    else:
+                        key, value = line.lstrip().rstrip().split(":", 1)
                         if not value.lstrip():
                             if next_line.lstrip(" ").startswith("-") and (":" in line):
                                 try:
@@ -289,6 +330,27 @@ def parse_yaml(file_path, char="#'", debug=False):
                                                           meta.lstrip(), is_commented))
                                 if debug: print("@\tFound a 3RD LEVEL meta entry.")
 
+                        if line.rstrip().endswith(">-"):
+                            key, value = line.rstrip().split(":", 1)
+                            block_values = " >-"
+                            block_var = yamldoc.entries.Entry(key, block_values, meta, is_commented)
+                            if debug: print("@\tENTROU em second level")
+                            continue
+
+                        if value.lstrip():
+                            second_level.entries.append(
+                                yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip(), is_commented))
+                            if debug:
+                                print("@\tFound a 2nd entry and deposited it in meta.")
+                            meta = ""
+
+                        if count_indent(next_line) == 0:
+                            md.append(first_level)
+                            md.append(second_level)
+                            first_level = None
+                            second_level = None
+                            if debug: print("@\tBACK TO 0")
+                            continue
 
         # For some reason, it doesn't parse the last line
         if last_line and (indent_level == 0):
