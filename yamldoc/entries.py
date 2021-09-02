@@ -82,7 +82,7 @@ class Entry:
     """
     Container for a single YAML key value pairing and associated metadata."""
 
-    def __init__(self, key, value, meta):
+    def __init__(self, key, value, meta, is_commented):
         """
         Initialize the object
 
@@ -98,6 +98,7 @@ class Entry:
         self.type = None
         self.mandatory = None
         self.example = "Mandatory is not specified"
+        self.is_commented = is_commented
 
     def __repr__(self):
         """
@@ -116,10 +117,10 @@ class Entry:
             schema: Print with four columns instead of three.
         """
         if schema:
-            # m = '<br />'.join(textwrap.wrap(self.meta, width=50))
             m = self.meta
             example = self.example
             vartype = self.type
+            mandatory = self.mandatory
             if "$" in m:
                 accepted_types = ["byte", "boolean", "string", "integer", "long", "double", "char", "float", "short"]
                 if m[m.find("$") + 1:].split()[0] in accepted_types:
@@ -131,7 +132,6 @@ class Entry:
             else:
                 vartype = "Unknown"
             if "%" in m:
-                mandatory = self.mandatory
                 accepted_types = ["yes", "no"]
                 if m[m.find("%") + 1:].split()[0] in accepted_types:
                     mandatory = m[m.find("%") + 1:].split()[0]
@@ -152,7 +152,12 @@ class Entry:
             else:
                 example = self.key + ": " + self.value
 
-            return f'| {self.key} | {mandatory} | {vartype} | {self.value.replace(" ", "&nbsp;")} | {example.replace(" ", "&nbsp;")} | {m.replace(" ", "&nbsp;")} |'
+            if self.is_commented is True:
+                default = ""
+            elif self.is_commented is False:
+                default = self.value
+
+            return f'| {self.key} | {mandatory} | {vartype} | {default} | {example.replace(" ", "&nbsp;")} | {m.replace(" ", "&nbsp;")} |'
         else:
             m = '<br />'.join(textwrap.wrap(self.meta, width=50))
             return f'| `{self.key}` | `{self.value.replace(" ", "&nbsp;")}` | {m.replace(" ", "&nbsp;")} |'
