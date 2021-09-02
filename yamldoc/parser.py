@@ -162,6 +162,7 @@ def parse_yaml(file_path, char="#'", debug=False):
                             md.append(yamldoc.entries.Entry("[" + key + "](#" + key + ")", value, meta.lstrip(), is_commented))
                             first_level = yamldoc.entries.MetaEntry(key, meta)
                             if debug: print("@\tFound a meta entry.")
+                            meta = ""
                             continue
                     else:
                         md.append(yamldoc.entries.Entry(key, value.lstrip(' '), meta.lstrip(), is_commented))
