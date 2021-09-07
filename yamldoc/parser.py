@@ -32,6 +32,7 @@ def parse_yaml(file_path, char="#'", debug=False):
     second_level = None
     object_var = None
     block_var = None
+    test_var = None
     is_commented = False
 
     with open(file_path) as yaml:
@@ -71,10 +72,19 @@ def parse_yaml(file_path, char="#'", debug=False):
                 line.lstrip(" ")
 
             if object_var is None and next_line.lstrip(" ").startswith("- {"):
-                key = line.rstrip().split(":", 1)[0]
+                key = line.lstrip().rstrip().split(":", 1)[0]
                 value = ""
-                md.append(yamldoc.entries.Entry("[" + key + "](#" + key + ")", value, meta.lstrip(), is_commented))
-                object_var = yamldoc.entries.MetaEntry(key, meta)
+                if first_level is None:
+                    md.append(yamldoc.entries.Entry("[" + key + "](#" + key + ")", value, meta.lstrip(), is_commented))
+                    object_var = yamldoc.entries.MetaEntry(key, meta)
+                    if debug: print("@\tFOUND A COLLECTION OF OBJECTS AT BASE LEVEL")
+                if first_level is not None and second_level is None:
+                    first_level.entries.append(yamldoc.entries.Entry("[" + key + "](#" + key + ")", value, meta.lstrip(), is_commented))
+                    object_var = yamldoc.entries.MetaEntry(key, meta)
+                    if debug: print("@\tFOUND A COLLECTION OF OBJECTS AT FIRST LEVEL")
+                if second_level is not None:
+                    second_level.entries.append(yamldoc.entries.Entry("[" + key + "](#" + key + ")", value, meta.lstrip(), is_commented))
+                    object_var = yamldoc.entries.MetaEntry(key, meta)
                 if debug: print("@\tFOUND A COLLECTION OF OBJECTS")
                 meta = ""
                 continue
@@ -85,21 +95,27 @@ def parse_yaml(file_path, char="#'", debug=False):
                 if line.lstrip().startswith("- {"):
                     continue
                 if line.lstrip(' ').startswith(char):
-                    stupid_line = line.lstrip(" ")
-                    meta = meta + stupid_line.lstrip(char).rstrip()
+                    meta = meta + line.lstrip().lstrip(char).rstrip()
                     if debug:
                         print("@\tFound a comment")
                 else:
                     if line.lstrip().startswith("}") and not next_line.lstrip(" -").startswith("{"):
                         if debug: print("@\tEND OF OBJECT COLLECTION")
-                        if count_indent(line) == 4:
-                            first_level.entries.append(object_var)
-                            object_var = None
-                            continue
-                        else:
-                            md.append(object_var)
-                            object_var = None
-                            continue
+                        # if count_indent(line) == 4:
+                        #     first_level.entries.append(object_var)
+                        #     object_var = None
+                        #     if debug: print("@\tEnd of object collection at first level.")
+                        #     continue
+                        # if count_indent(line) == 6:
+                        #     first_level.entries.append(object_var)
+                        #     object_var = None
+                        #     if debug: print("@\tEnd of object collection at first level.")
+                        #     continue
+                        # else:
+                        md.append(object_var)
+                        object_var = None
+                        if debug: print("@\tNot sure")
+                        continue
 
                     if line.lstrip().startswith("}") and next_line.lstrip(" -").startswith("{"):
                         if debug: print("@\tEND OF OBJECT")
@@ -138,7 +154,7 @@ def parse_yaml(file_path, char="#'", debug=False):
 
                 else:
                     try:
-                        key, value = line.rstrip().split(":", 1)
+                        key, value = line.lstrip().rstrip().split(":", 1)
                     except ValueError:
                         continue
                     if not value.lstrip():
