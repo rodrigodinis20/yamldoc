@@ -121,6 +121,8 @@ class Entry:
             example = self.example
             vartype = self.type
             mandatory = self.mandatory
+            meta_info = m.split("$", 1)[0]
+            m = m.replace(meta_info, "")
             if "$" in m:
                 accepted_types = ["byte", "boolean", "string", "integer", "long", "double", "char", "float", "short"]
                 if m[m.find("$") + 1:].split()[0] in accepted_types:
@@ -157,7 +159,7 @@ class Entry:
             elif self.is_commented is False:
                 default = self.value
 
-            return f'| {self.key} | {mandatory} | {vartype} | {default} | {example.replace(" ", "&nbsp;")} | {m.replace(" ", "&nbsp;")} |'
+            return f'| {self.key} | {mandatory} | {vartype} | {default} | {example.replace(" ", "&nbsp;")} | {meta_info.replace(" ", "&nbsp;")} |'
         else:
             m = '<br />'.join(textwrap.wrap(self.meta, width=50))
             return f'| `{self.key}` | `{self.value.replace(" ", "&nbsp;")}` | {m.replace(" ", "&nbsp;")} |'

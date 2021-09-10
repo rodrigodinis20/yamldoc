@@ -24,9 +24,9 @@ def parse_yaml(file_path, char="#'", debug=False):
     # newlines. The most straightforward kind of things to parse will be
     # keyvalue pairs preceded by comments with the Doxygen marker #'
 
-    meta = ""
+    meta = "<br></br>"
     md = []
-    values = "<br>"
+    values = "<br></br>"
     block_values = ""
     first_level = None
     second_level = None
@@ -95,9 +95,9 @@ def parse_yaml(file_path, char="#'", debug=False):
                 if line.lstrip().startswith("- {"):
                     continue
                 if line.lstrip(' ').startswith(char):
-                    meta = meta + line.lstrip().lstrip(char).rstrip()
+                    meta = meta + line.lstrip().lstrip(char).rstrip() + " <br></br>"
                     if debug:
-                        print("@\tFound a comment")
+                        print("@\tFound a comment : " + meta)
                 else:
                     if line.lstrip().startswith("}") and not next_line.lstrip(" -").startswith("{"):
                         if debug: print("@\tEND OF OBJECT COLLECTION")
@@ -136,8 +136,8 @@ def parse_yaml(file_path, char="#'", debug=False):
 
             if first_level is None:
                 if line.startswith(char):
-                    meta = meta + line.lstrip(char).rstrip()
-                    if debug: print("@\tFound " + str(indent_level) + " indent level.")
+                    meta += line.lstrip(char).rstrip() + " <br></br>"
+                    if debug: print("@\tFound a comment : " + meta )
 
                 elif line.lstrip().startswith("-") and line.endswith("-\n"):
                     if debug: print("@\tLine ignored.")
@@ -194,9 +194,8 @@ def parse_yaml(file_path, char="#'", debug=False):
             if first_level is not None and second_level is None:
                 if first_level.isBase:
                     if line.lstrip(' ').startswith(char):
-                        stupid_line = line.lstrip(" ")
-                        meta = meta + stupid_line.lstrip(char).rstrip()
-                        if debug: print("@\tFound a comment")
+                        meta += line.lstrip(char).rstrip() + " <br></br>"
+                        if debug: print("@\tFound a comment :" + meta)
 
                     elif line.lstrip(" ").startswith("-") and block_var is None:
                         if count_indent(next_line) == 0:
@@ -276,10 +275,9 @@ def parse_yaml(file_path, char="#'", debug=False):
             if second_level is not None:
                 if second_level.isBase:
                     if line.lstrip(' ').startswith(char):
-                        stupid_line = line.lstrip(" ")
-                        meta = meta + stupid_line.lstrip(char).rstrip()
+                        meta += line.lstrip(char).rstrip() + " <br></br>"
                         if debug:
-                            print("@\tFound a comment")
+                            print("@\tFound a comment :" + meta)
 
                     elif line.lstrip(" ").startswith("-") and block_var is None:
                         if count_indent(next_line) == 0:
